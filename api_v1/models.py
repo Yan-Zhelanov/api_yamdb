@@ -1,5 +1,4 @@
 from django.db import models
-from django import db
 from .validators import year_validator
 
 
@@ -47,9 +46,6 @@ class Title(models.Model):
         unique=True,
         db_index=True,
         verbose_name='Название'
-    )
-    rating = Reviews.objects.filter(title__name='name').aggregate(
-        db.models.Avg('score')
     )
     year = models.IntegerField(
         null=True,
