@@ -3,6 +3,7 @@ import string
 
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
@@ -10,11 +11,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_405_METHOD_NOT_ALLOWED
 from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.pagination import CursorPagination
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 from users.models import ROLES
 from .permissions import IsAdminOrMe
-from .serializers import UserSerializer
-from .models import User
+from .serializers import UserSerializer, ReviewSerializer
+from .models import User, Title
 
 EMAIL_CANNOT_BE_EMPTY = 'O-ops! E-mail cannot be empty!'
 EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
@@ -102,3 +105,45 @@ class GetToken(APIView):
             return Response({'error': CONFIRMATION_CODE_INVALID}, status=HTTP_400_BAD_REQUEST)
         token = AccessToken.for_user(user)
         return Response({'token': str(token)})
+
+
+class ReviewViewSet(ModelViewSet):
+    serializer_class = ReviewSerializer
+    pagination_class = CursorPagination
+    filter_backends = [DjangoFilterBackend]
+    throttle_classes = [UserRateThrottle,
+                        AnonRateThrottle]
+
+    def get_title(self):
+        return get_object_or_404(Title, id=self.kwargs['title_id'])
+
+    def get_queryset(self):
+        return self.get_title.reviews.all()
+
+    def perform_create(self, serializer):
+        serializer.save(
+            author=self.request.user,
+            title=self.get_title
+        )
+
+
+class CommentViewSet(ModelViewSet):
+    serializer_class = ReviewSerializer
+    pagination_class = CursorPagination
+    filter_backends = [DjangoFilterBackend]
+    throttle_classes = [UserRateThrottle,
+                        AnonRateThrottle]
+
+    def get_review(self):
+        title = get_object_or_404(Title, id=self.kwargs['title_id'])
+        return get_object_or_404(title.reviews,
+                                 id=self.kwargs['review_id'])
+
+    def get_queryset(self):
+        return self.get_review.comments.all()
+
+    def perform_create(self, serializer):
+        serializer.save(
+            author=self.request.user,
+            review=self.get_review
+        )
