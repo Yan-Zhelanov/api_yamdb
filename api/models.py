@@ -1,6 +1,5 @@
 from django.db import models
-from .validators import year_validator
-
+from .validators import custom_year_validator
 
 class Category(models.Model):
     name = models.CharField(
@@ -51,7 +50,7 @@ class Title(models.Model):
         null=True,
         verbose_name='Год',
         validators=[
-            year_validator
+            custom_year_validator
         ]
     )
     description = models.TextField(
@@ -63,12 +62,16 @@ class Title(models.Model):
         on_delete=models.DO_NOTHING,
         blank=True,
         null=True,
-        related_name='title',
+        related_name='titles',
         verbose_name='Категория'
     )
     genre = models.ManyToManyField(
         Genre,
         blank=True,
-        related_name='title',
+        related_name='titles',
         verbose_name='Жанр'
     )
+
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'

@@ -4,13 +4,12 @@ from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
 from rest_framework.permissions import SAFE_METHODS
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from .filters import TitleFilter
 from .models import Title, Genre, Category
 from .permissions import ReadOnly, IsAdmin
 from .serializers import (TitlesSerializerGet, TitlesSerializerPost,
                           GenresSerializer, CategoriesSerializer)
-
 
 class CreateDelListViewset(CreateModelMixin, DestroyModelMixin,
                            ListModelMixin, GenericViewSet):
@@ -18,7 +17,7 @@ class CreateDelListViewset(CreateModelMixin, DestroyModelMixin,
 
 
 class CategoriesViewSet(CreateDelListViewset):
-    queryset = Category.objects,all()
+    queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
     permission_classes = (IsAdmin|ReadOnly,)
     lookup_field = 'slug'
@@ -35,7 +34,7 @@ class GenresViewSet(CreateDelListViewset):
     search_fields = ('name',)
 
 
-class TitlesViewSet(ModelViewSet):
+class TitlesViewset(ModelViewSet):
     permission_classes = (IsAdmin|ReadOnly,)
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')).order_by('name')

@@ -1,7 +1,6 @@
 from rest_framework import serializers
-
 from .models import Category, Genre, Title
-
+from .validators import custom_year_validator
 
 class CategoriesSerializer(serializers.ModelSerializer):
 
@@ -43,5 +42,5 @@ class TitlesSerializerPost(TitleSerializer):
     )
     year = serializers.IntegerField(
         required=False,
-        validators=(year_validator,)
+        validators=(custom_year_validator,)
     )
