@@ -13,12 +13,13 @@ class CustomUser(AbstractUser):
         blank=True,
         null=True,
     )
-    role = models.IntegerField(
+    role = models.CharField(
         verbose_name='Уровень пользователя',
         choices=ROLES,
         default='U',
+        max_length=1
     )
-    code_confirmation = models.CharField(
+    confirmation_code = models.CharField(
         verbose_name='Код подтверждения',
         blank=True,
         null=True,
