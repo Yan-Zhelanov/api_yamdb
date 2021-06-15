@@ -2,12 +2,17 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 ROLES = (
-    ('U', 'user'),
-    ('M', 'moderator'),
-    ('A', 'admin')
+    ('user', 'user'),
+    ('moderator', 'moderator'),
+    ('admin', 'admin')
 )
 
 class CustomUser(AbstractUser):
+    email = models.EmailField(
+        verbose_name='E-Mail',
+        null=True,
+        unique=True,
+    )
     bio = models.TextField(
         verbose_name="О себе",
         blank=True,
@@ -16,8 +21,8 @@ class CustomUser(AbstractUser):
     role = models.CharField(
         verbose_name='Уровень пользователя',
         choices=ROLES,
-        default='U',
-        max_length=1
+        default='user',
+        max_length=9
     )
     confirmation_code = models.CharField(
         verbose_name='Код подтверждения',

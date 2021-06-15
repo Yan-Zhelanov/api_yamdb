@@ -2,17 +2,17 @@ import secrets
 import string
 
 from django.core.mail import send_mail
-from rest_framework.viewsets import GenericViewSet
-from rest_framework.mixins import CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin
+from django.shortcuts import get_object_or_404
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_405_METHOD_NOT_ALLOWED
 from rest_framework_simplejwt.tokens import AccessToken
-from django_filters.rest_framework import DjangoFilterBackend
 
-from .permissions import IsAdmin
+from users.models import ROLES
+from .permissions import IsAdminOrMe
 from .serializers import UserSerializer
 from .models import User
 
@@ -25,13 +25,41 @@ EMAIL_SUBJECT = 'YamDB — Confirmation Code'
 EMAIL_TEXT = ('You secret code for getting the token: {confirmation_code}\n'
               'Don\'t sent it on to anyone!')
 
-class UserViewSet(CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet):
+
+def update_serializer_role(self, serializer):
+    role = self.request.POST.get('role', None)
+    if role is None:
+        return serializer.save()
+    for key, _role in ROLES:
+        if _role == role:
+            return serializer.save(role=key)
+    serializer.save()
+
+
+class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdminOrMe,)
     queryset = User.objects.all()
-    filter_backends = (SearchFilter, DjangoFilterBackend)
+    filter_backends = (SearchFilter,)
     search_fields = ('username',)
-    filterset_fields = ('username',)
+
+    def get_object(self):
+        username = self.kwargs['pk']
+        if username == 'me':
+            return self.request.user
+        user = get_object_or_404(User, username=username)
+        return user
+
+    def perform_create(self, serializer):
+        update_serializer_role(self, serializer)
+
+    def perform_update(self, serializer):
+        update_serializer_role(self, serializer)
+
+    def destroy(self, request, *args, **kwargs):
+        if self.kwargs.get('pk', None) == 'me':
+            return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
+        return super().destroy(request, *args, **kwargs)
 
 
 class SendEmail(APIView):
