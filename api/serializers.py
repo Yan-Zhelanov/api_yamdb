@@ -34,3 +34,7 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = '__all__'
         model = Comment
         read_only_fields = ['review', 'pub_date']
+
+
+class TitlesSerializerPost(serializers.ModelSerializer):
+    pass

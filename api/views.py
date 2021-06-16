@@ -6,7 +6,7 @@ from rest_framework.pagination import CursorPagination
 from .models import Title
 from .permissions import (IsAdminOrReadOnly, IsAuthorOrReadOnly,
                           IsModeratorOrReadOnly)
-from .serializers import ReviewSerializer
+from .serializers import ReviewSerializer, TitlesSerializerPost
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -30,15 +30,21 @@ class ReviewViewSet(viewsets.ModelViewSet):
             author=self.request.user,
             title=self.get_title()
         )
-        self.get_title().save(rating=self.get_object().aggregate(
-            db.models.Avg('score')
-        ))
+        TitlesSerializerPost(
+            instance=self.get_title(),
+            data={'rating': self.get_object().aggregate(
+                db.models.Avg('score')
+            )}
+        )
 
     def perform_update(self, serializer):
         serializer.save()
-        self.get_title().save(rating=self.get_object().aggregate(
-            db.models.Avg('score')
-        ))
+        TitlesSerializerPost(
+            instance=self.get_title(),
+            data={'rating': self.get_object().aggregate(
+                db.models.Avg('score')
+            )}
+        )
 
 
 class CommentViewSet(viewsets.ModelViewSet):
