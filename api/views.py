@@ -3,10 +3,14 @@ import string
 
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, SAFE_METHODS
+from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
+                                   ListModelMixin)
+from .filters import TitleFilter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_405_METHOD_NOT_ALLOWED
@@ -15,8 +19,8 @@ from rest_framework.pagination import CursorPagination
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 from users.models import ROLES
-from .permissions import IsAdminOrMe
-from .serializers import UserSerializer, ReviewSerializer
+from .permissions import IsAdminOrMe, IsAdminOrReadOnly
+from .serializers import UserSerializer, ReviewSerializer, TitlesSerializerGet, TitlesSerializerPost, GenresSerializer, CategoriesSerializer
 from .models import User, Title
 
 EMAIL_CANNOT_BE_EMPTY = 'O-ops! E-mail cannot be empty!'
@@ -147,3 +151,39 @@ class CommentViewSet(ModelViewSet):
             author=self.request.user,
             review=self.get_review
         )
+
+
+class CreateDelListViewset(CreateModelMixin, DestroyModelMixin,
+                           ListModelMixin, GenericViewSet):
+    pass
+
+
+class CategoriesViewSet(CreateDelListViewset):
+    queryset = Category.objects.all()
+    serializer_class = CategoriesSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
+
+
+class GenresViewSet(CreateDelListViewset):
+    queryset = Genre.objects.all()
+    serializer_class = GenresSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
+
+
+class TitlesViewset(ModelViewSet):
+    permission_classes = (IsAdminOrReadOnly,)
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).order_by('name')
+    filterset_class = TitleFilter
+    filter_backends = (DjangoFilterBackend,)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return TitlesSerializerGet
+        return TitlesSerializerPost

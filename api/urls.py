@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import UserViewSet, SendEmail, GetToken, CommentViewSet, ReviewViewSet
+from .views import UserViewSet, SendEmail, GetToken, CommentViewSet, ReviewViewSet, TitlesViewset, GenresViewSet, CategoriesViewSet
 
 router_v1 = DefaultRouter()
 router_v1.register(r'users', UserViewSet, basename='users')
@@ -15,6 +15,18 @@ router_v1.register(
     CommentViewSet,
     basename='comments'
 )
+router_v1.register(
+    r'titles',
+    TitlesViewset,
+    basename='titles')
+router_v1.register(
+    r'categories',
+    CategoriesViewSet,
+    basename='categories')
+router_v1.register(
+    r'genres',
+    GenresViewSet,
+    basename='genres')
 
 urlpatterns = [
     path('v1/auth/email/', SendEmail.as_view(), name='send_email'),
