@@ -1,11 +1,11 @@
-from django import shortcuts
+from django import db, shortcuts
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import throttling, viewsets
 from rest_framework.pagination import CursorPagination
 
 from .models import Title
-from .serializers import ReviewSerializer
 from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from .serializers import ReviewSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -27,6 +27,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
             author=self.request.user,
             title=self.get_title
         )
+        self.get_title().save(rating=self.get_object().aggregate(
+            db.models.Avg('score')
+        ))
+
+    def perform_update(self, serializer):
+        serializer.save()
+        self.get_title().save(rating=self.get_object().aggregate(
+            db.models.Avg('score')
+        ))
 
 
 class CommentViewSet(viewsets.ModelViewSet):
