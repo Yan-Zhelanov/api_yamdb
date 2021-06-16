@@ -2,26 +2,30 @@ import secrets
 import string
 
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import AllowAny, SAFE_METHODS
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
-from .filters import TitleFilter
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_405_METHOD_NOT_ALLOWED
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.pagination import CursorPagination
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.permissions import SAFE_METHODS, AllowAny
+from rest_framework.response import Response
+from rest_framework.status import (HTTP_400_BAD_REQUEST,
+                                   HTTP_405_METHOD_NOT_ALLOWED)
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import ROLES
+
+from .filters import TitleFilter
+from .models import Category, Genre, Title, User
 from .permissions import IsAdminOrMe, IsAdminOrReadOnly
-from .serializers import UserSerializer, ReviewSerializer, TitlesSerializerGet, TitlesSerializerPost, GenresSerializer, CategoriesSerializer
-from .models import User, Title
+from .serializers import (CategoriesSerializer, GenresSerializer,
+                          ReviewSerializer, TitlesSerializerGet,
+                          TitlesSerializerPost, UserSerializer)
 
 EMAIL_CANNOT_BE_EMPTY = 'O-ops! E-mail cannot be empty!'
 EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'

@@ -1,9 +1,12 @@
-from rest_framework.serializers import ModelSerializer, ChoiceField, EmailField, SlugRelatedField, IntegerField, FloatField
-from rest_framework.validators import ValidationError, UniqueTogetherValidator
-from .validators import custom_year_validator
+from rest_framework.serializers import (ChoiceField, EmailField, FloatField,
+                                        IntegerField, ModelSerializer,
+                                        SlugRelatedField)
+from rest_framework.validators import UniqueTogetherValidator, ValidationError
 
 from users.models import ROLES
-from .models import User, Review, Comment, Category, Genre, Title
+
+from .models import Category, Comment, Genre, Review, Title, User
+from .validators import custom_year_validator
 
 EMAIL_IS_EXISTS = 'O-ops! E-Mail "{email}" already exists!'
 REVIEW_EXISTS = 'O-ops! Review already exists!'
