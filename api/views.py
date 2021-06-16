@@ -22,7 +22,7 @@ from users.models import ROLES
 
 from .filters import TitleFilter
 from .models import Category, Genre, Title, User
-from .permissions import IsAdminOrMe, IsAdminOrReadOnly
+from .permissions import IsAdminOrMe, IsAdminOrReadOnly, IsModeratorOrReadOnly, IsAuthorOrReadOnly
 from .serializers import (CategoriesSerializer, GenresSerializer,
                           ReviewSerializer, TitlesSerializerGet,
                           TitlesSerializerPost, UserSerializer)
@@ -118,6 +118,9 @@ class GetToken(APIView):
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = CursorPagination
+    permission_classes = [IsAdminOrReadOnly,
+                          IsAuthorOrReadOnly,
+                          IsModeratorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     throttle_classes = [UserRateThrottle,
                         AnonRateThrottle]
@@ -133,11 +136,23 @@ class ReviewViewSet(ModelViewSet):
             author=self.request.user,
             title=self.get_title
         )
+        self.get_title().save(rating=self.get_object().aggregate(
+            db.models.Avg('score')
+        ))
+
+    def perform_update(self, serializer):
+        serializer.save()
+        self.get_title().save(rating=self.get_object().aggregate(
+            db.models.Avg('score')
+        ))
 
 
 class CommentViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = CursorPagination
+    permission_classes = [IsAdminOrReadOnly,
+                          IsAuthorOrReadOnly,
+                          IsModeratorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     throttle_classes = [UserRateThrottle,
                         AnonRateThrottle]

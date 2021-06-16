@@ -20,3 +20,9 @@ class IsAdminOrReadOnly(BasePermission):
         return (request.user.is_superuser
                 or request.user.role == 'admin'
                 or request.method in SAFE_METHODS)
+
+
+class IsModeratorOrReadOnly(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return (request.user.role == 'moderator'
+                or request.method in SAFE_METHODS)
