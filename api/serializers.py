@@ -1,6 +1,6 @@
-from rest_framework.serializers import (ChoiceField, EmailField, FloatField,
-                                        IntegerField, ModelSerializer,
-                                        SlugRelatedField, CurrentUserDefault)
+from rest_framework.serializers import (ChoiceField, CurrentUserDefault,
+                                        EmailField, FloatField, IntegerField,
+                                        ModelSerializer, SlugRelatedField)
 from rest_framework.validators import UniqueTogetherValidator, ValidationError
 
 from users.models import ROLES

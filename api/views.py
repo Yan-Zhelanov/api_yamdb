@@ -8,7 +8,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
-from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_400_BAD_REQUEST,
@@ -22,7 +21,8 @@ from users.models import ROLES
 
 from .filters import TitleFilter
 from .models import Category, Genre, Title, User
-from .permissions import IsAdminOrMe, IsAdminOrReadOnly, IsModeratorOrReadOnly, IsAuthorOrReadOnly
+from .permissions import (IsAdminOrMe, IsAdminOrReadOnly, IsAuthorOrReadOnly,
+                          IsModeratorOrReadOnly)
 from .serializers import (CategoriesSerializer, GenresSerializer,
                           ReviewSerializer, TitlesSerializerGet,
                           TitlesSerializerPost, UserSerializer)
@@ -79,12 +79,15 @@ class SendEmail(APIView):
     def post(self, request):
         email = request.POST.get('email', None)
         if email is None:
-            return Response({'error': EMAIL_CANNOT_BE_EMPTY}, status=HTTP_400_BAD_REQUEST)
+            return Response({'error': EMAIL_CANNOT_BE_EMPTY},
+                            status=HTTP_400_BAD_REQUEST)
         user = User.objects.filter(email=email)
         if not user.exists():
-            return Response({'error': EMAIL_NOT_FOUND_ERROR}, status=HTTP_400_BAD_REQUEST)
+            return Response({'error': EMAIL_NOT_FOUND_ERROR},
+                            status=HTTP_400_BAD_REQUEST)
         alphabet = string.ascii_letters + string.digits
-        confirmation_code = ''.join(secrets.choice(alphabet) for i in range(16))
+        confirmation_code = ''.join(secrets.choice(alphabet)
+                                    for i in range(16))
         send_mail(
             EMAIL_SUBJECT,
             EMAIL_TEXT.format(confirmation_code=confirmation_code),
@@ -101,23 +104,27 @@ class GetToken(APIView):
     def post(self, request):
         email = request.POST.get('email', None)
         if email is None:
-            return Response({'error': EMAIL_CANNOT_BE_EMPTY}, status=HTTP_400_BAD_REQUEST)
+            return Response({'error': EMAIL_CANNOT_BE_EMPTY},
+                            status=HTTP_400_BAD_REQUEST)
         user = User.objects.filter(email=email)
         if not user.exists():
-            return Response({'error': EMAIL_NOT_FOUND_ERROR}, status=HTTP_400_BAD_REQUEST)
+            return Response({'error': EMAIL_NOT_FOUND_ERROR},
+                            status=HTTP_400_BAD_REQUEST)
         user = user.first()
         confirmation_code = request.POST.get('confirmation_code', None)
         if confirmation_code is None:
-            return Response({'error': CONFIRMATION_CODE_CANNOT_BE_EMPTY}, status=HTTP_400_BAD_REQUEST)
+            return Response({'error': CONFIRMATION_CODE_CANNOT_BE_EMPTY},
+                            status=HTTP_400_BAD_REQUEST)
         if confirmation_code != user.confirmation_code:
-            return Response({'error': CONFIRMATION_CODE_INVALID}, status=HTTP_400_BAD_REQUEST)
+            return Response({'error': CONFIRMATION_CODE_INVALID},
+                            status=HTTP_400_BAD_REQUEST)
         token = AccessToken.for_user(user)
         return Response({'token': str(token)})
 
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    pagination_class = CursorPagination
+    # pagination_class = CursorPagination
     permission_classes = [IsAdminOrReadOnly,
                           IsAuthorOrReadOnly,
                           IsModeratorOrReadOnly]
@@ -155,7 +162,7 @@ class ReviewViewSet(ModelViewSet):
 
 class CommentViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    pagination_class = CursorPagination
+    # pagination_class = CursorPagination
     permission_classes = [IsAdminOrReadOnly,
                           IsAuthorOrReadOnly,
                           IsModeratorOrReadOnly]

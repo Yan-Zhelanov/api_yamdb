@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import (
-    CASCADE, DO_NOTHING, CharField, DateTimeField, ForeignKey, IntegerField,
-    ManyToManyField, Model, TextField, UniqueConstraint, SlugField)
+from django.db.models import (CASCADE, DO_NOTHING, CharField, DateTimeField,
+                              ForeignKey, IntegerField, ManyToManyField, Model,
+                              SlugField, TextField, UniqueConstraint)
 
 from .validators import custom_year_validator
 
