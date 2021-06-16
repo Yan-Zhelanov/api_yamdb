@@ -23,12 +23,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return shortcuts.get_object_or_404(Title, id=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_title.reviews.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
-            title=self.get_title
+            title=self.get_title()
         )
         self.get_title().save(rating=self.get_object().aggregate(
             db.models.Avg('score')
