@@ -1,23 +1,22 @@
-from rest_framework import serializers
 from .models import Category, Genre, Title
 from .validators import custom_year_validator
 
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategoriesSerializer(ModelSerializer):
 
     class Meta:
         exclude = ('id',)
         model = Category
 
 
-class GenresSerializer(serializers.ModelSerializer):
+class GenresSerializer(ModelSerializer):
 
     class Meta:
         exclude = ('id',)
         model = Genre
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    rating = serializers.FloatField(read_only=True)
+class TitleSerializer(ModelSerializer):
+    rating = FloatField(read_only=True)
 
     class Meta:
         model = Title
@@ -30,17 +29,17 @@ class TitlesSerializerGet(TitleSerializer):
 
 
 class TitlesSerializerPost(TitleSerializer):
-    category = serializers.SlugRelatedField(
+    category = SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all(),
         required=False
     )
-    genre = serializers.SlugRelatedField(
+    genre = SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
         many=True
     )
-    year = serializers.IntegerField(
+    year = IntegerField(
         required=False,
         validators=(custom_year_validator,)
     )

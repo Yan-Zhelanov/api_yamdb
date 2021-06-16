@@ -1,14 +1,14 @@
-from django.db import models
+from django.db.models CharField, ManyToManyField
 from .validators import custom_year_validator
 
-class Category(models.Model):
-    name = models.CharField(
+class Category(Model):
+    name = CharField(
         max_length=200,
         unique=True,
         db_index=True,
         verbose_name='Название'
     )
-    slug = models.SlugField(
+    slug = SlugField(
         max_length=40,
         unique=True,
         verbose_name='Метка'
@@ -20,14 +20,14 @@ class Category(models.Model):
         ordering = ('name',)
 
 
-class Genre(models.Model):
-    name = models.CharField(
+class Genre(Model):
+    name = CharField(
         max_length=200,
         unique=True,
         db_index=True,
         verbose_name='Название'
     )
-    slug = models.SlugField(
+    slug = SlugField(
         max_length=40,
         unique=True,
         verbose_name='Метка'
@@ -39,33 +39,33 @@ class Genre(models.Model):
         ordering = ('name',)
 
 
-class Title(models.Model):
-    name = models.CharField(
+class Title(Model):
+    name = CharField(
         max_length=200,
         unique=True,
         db_index=True,
         verbose_name='Название'
     )
-    year = models.IntegerField(
+    year = IntegerField(
         null=True,
         verbose_name='Год',
         validators=[
             custom_year_validator
         ]
     )
-    description = models.TextField(
+    description = TextField(
         null=True,
         verbose_name='Описание'
     )
-    category = models.ForeignKey(
+    category = ForeignKey(
         Category,
-        on_delete=models.DO_NOTHING,
+        on_delete=DO_NOTHING,
         blank=True,
         null=True,
         related_name='titles',
         verbose_name='Категория'
     )
-    genre = models.ManyToManyField(
+    genre = ManyToManyField(
         Genre,
         blank=True,
         related_name='titles',
