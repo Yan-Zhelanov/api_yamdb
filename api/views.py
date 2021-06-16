@@ -137,13 +137,13 @@ class ReviewViewSet(ModelViewSet):
             title=self.get_title
         )
         self.get_title().save(rating=self.get_object().aggregate(
-            db.models.Avg('score')
+            Avg('score')
         ))
 
     def perform_update(self, serializer):
         serializer.save()
         self.get_title().save(rating=self.get_object().aggregate(
-            db.models.Avg('score')
+            Avg('score')
         ))
 
 
