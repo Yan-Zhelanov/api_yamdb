@@ -136,15 +136,21 @@ class ReviewViewSet(ModelViewSet):
             author=self.request.user,
             title=self.get_title()
         )
-        self.get_title().save(rating=self.get_object().aggregate(
-            Avg('score')
-        ))
+        TitlesSerializerPost(
+            instance=self.get_title(),
+            data={'rating': self.get_object().aggregate(
+                Avg('score')
+            )}
+        )
 
     def perform_update(self, serializer):
         serializer.save()
-        self.get_title().save(rating=self.get_object().aggregate(
-            Avg('score')
-        ))
+        TitlesSerializerPost(
+            instance=self.get_title(),
+            data={'rating': self.get_object().aggregate(
+                Avg('score')
+            )}
+        )
 
 
 class CommentViewSet(ModelViewSet):

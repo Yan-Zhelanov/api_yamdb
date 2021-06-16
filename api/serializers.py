@@ -1,6 +1,6 @@
 from rest_framework.serializers import (ChoiceField, EmailField, FloatField,
                                         IntegerField, ModelSerializer,
-                                        SlugRelatedField)
+                                        SlugRelatedField, CurrentUserDefault)
 from rest_framework.validators import UniqueTogetherValidator, ValidationError
 
 from users.models import ROLES
@@ -29,6 +29,7 @@ class ReviewSerializer(ModelSerializer):
     author = SlugRelatedField(
         read_only=True,
         slug_field='username',
+        default=CurrentUserDefault()
     )
 
     class Meta:
@@ -46,6 +47,7 @@ class CommentSerializer(ModelSerializer):
     author = SlugRelatedField(
         read_only=True,
         slug_field='username',
+        default=CurrentUserDefault()
     )
 
     class Meta:
