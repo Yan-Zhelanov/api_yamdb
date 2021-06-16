@@ -9,7 +9,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import SAFE_METHODS, AllowAny
+from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_400_BAD_REQUEST,
                                    HTTP_405_METHOD_NOT_ALLOWED)
@@ -49,7 +49,7 @@ def update_serializer_role(self, serializer):
 
 class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
-    permission_classes = (IsAdminOrMe,)
+    permission_classes = (IsAuthenticated, IsAdminOrMe,)
     queryset = User.objects.all()
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
@@ -129,12 +129,12 @@ class ReviewViewSet(ModelViewSet):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_title.reviews.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
-            title=self.get_title
+            title=self.get_title()
         )
         self.get_title().save(rating=self.get_object().aggregate(
             Avg('score')

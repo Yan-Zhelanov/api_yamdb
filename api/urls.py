@@ -7,28 +7,21 @@ from .views import (
 
 router_v1 = DefaultRouter()
 router_v1.register(r'users', UserViewSet, basename='users')
-router_v1.register(
-    r'titles/(?P<title_id>\d+)/reviews',
-    ReviewViewSet,
-    basename='reviews'
-)
+router_v1.register(r'titles', TitlesViewset, basename='titles')
+router_v1.register(r'categories',
+                   CategoriesViewSet,
+                   basename='categories')
+router_v1.register(r'genres',
+                   GenresViewSet,
+                   basename='genres')
+router_v1.register(r'titles/(?P<title_id>\d+)/reviews',
+                   ReviewViewSet,
+                   basename='reviews')
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentViewSet,
     basename='comments'
 )
-router_v1.register(
-    r'titles',
-    TitlesViewset,
-    basename='titles')
-router_v1.register(
-    r'categories',
-    CategoriesViewSet,
-    basename='categories')
-router_v1.register(
-    r'genres',
-    GenresViewSet,
-    basename='genres')
 
 urlpatterns = [
     path('v1/auth/email/', SendEmail.as_view(), name='send_email'),
