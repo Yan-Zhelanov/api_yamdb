@@ -5,11 +5,13 @@ from rest_framework.pagination import CursorPagination
 
 from .models import Title
 from .serializers import ReviewSerializer
+from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = CursorPagination
+    permission_classes = [IsAdminOrReadOnly, IsAuthorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     throttle_classes = [throttling.UserRateThrottle,
                         throttling.AnonRateThrottle]
@@ -30,6 +32,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = CursorPagination
+    permission_classes = [IsAdminOrReadOnly, IsAuthorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     throttle_classes = [throttling.UserRateThrottle,
                         throttling.AnonRateThrottle]
