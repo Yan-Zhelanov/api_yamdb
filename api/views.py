@@ -4,14 +4,17 @@ from rest_framework import throttling, viewsets
 from rest_framework.pagination import CursorPagination
 
 from .models import Title
-from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from .permissions import (IsAdminOrReadOnly, IsAuthorOrReadOnly,
+                          IsModeratorOrReadOnly)
 from .serializers import ReviewSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = CursorPagination
-    permission_classes = [IsAdminOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly,
+                          IsAuthorOrReadOnly,
+                          IsModeratorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     throttle_classes = [throttling.UserRateThrottle,
                         throttling.AnonRateThrottle]
@@ -41,7 +44,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = CursorPagination
-    permission_classes = [IsAdminOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly,
+                          IsAuthorOrReadOnly,
+                          IsModeratorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     throttle_classes = [throttling.UserRateThrottle,
                         throttling.AnonRateThrottle]
