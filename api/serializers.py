@@ -1,7 +1,7 @@
 from rest_framework.serializers import (ChoiceField, CurrentUserDefault,
                                         EmailField, FloatField, IntegerField,
                                         ModelSerializer, SlugRelatedField)
-from rest_framework.validators import UniqueTogetherValidator, ValidationError
+from rest_framework.validators import ValidationError
 
 from users.models import ROLES
 
@@ -11,13 +11,15 @@ from .validators import custom_year_validator
 EMAIL_IS_EXISTS = 'O-ops! E-Mail "{email}" already exists!'
 REVIEW_EXISTS = 'O-ops! Review already exists!'
 
+
 class UserSerializer(ModelSerializer):
     role = ChoiceField(choices=ROLES, required=False)
     email = EmailField(required=True)
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'bio', 'email', 'role')
+        fields = ('first_name', 'last_name', 'username', 'bio', 'email',
+                  'role')
 
     def validate_email(self, email):
         if User.objects.filter(email=email).exists():
@@ -36,11 +38,16 @@ class ReviewSerializer(ModelSerializer):
         fields = '__all__'
         model = Review
         read_only_fields = ['title', 'pub_date']
-        validators = [UniqueTogetherValidator(
-            queryset=Review.objects.all(),
-            fields=['author', 'title'],
-            message=REVIEW_EXISTS
-        )]
+
+    def validate(self, attrs):
+        if self.context['view'].action == 'partial_update':
+            return attrs
+        if Review.objects.filter(
+            author=self.context['request'].user,
+            title=self.context['view'].kwargs.get('title_id', None)
+        ).exists():
+            raise ValidationError(REVIEW_EXISTS)
+        return attrs
 
 
 class CommentSerializer(ModelSerializer):

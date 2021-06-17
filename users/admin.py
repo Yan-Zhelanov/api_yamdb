@@ -14,12 +14,14 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ('username', 'email', 'role')
     search_fields = ('username', 'email')
     fieldsets = (
-        (None, {'fields': ('username', 'password', 'email', 'first_name', 'last_name', 'bio', 'role')}),
+        (None, {'fields': ('username', 'password', 'email', 'first_name',
+                           'last_name', 'bio', 'role')}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'email', 'first_name', 'last_name', 'bio', 'role')
+            'fields': ('username', 'password1', 'password2', 'email',
+                       'first_name', 'last_name', 'bio', 'role')
         }),
     )
     empty_value = '<пусто>'

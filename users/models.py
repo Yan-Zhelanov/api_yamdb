@@ -7,6 +7,7 @@ ROLES = (
     ('admin', 'admin')
 )
 
+
 class CustomUser(AbstractUser):
     email = models.EmailField(
         verbose_name='E-Mail',
@@ -30,3 +31,9 @@ class CustomUser(AbstractUser):
         null=True,
         max_length=16,
     )
+
+    class Meta:
+        ordering = ('-id',)
+
+    def __str__(self):
+        return self.username

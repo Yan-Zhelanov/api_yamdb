@@ -48,7 +48,7 @@ class Genre(Model):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
         ordering = ('name',)
-    
+
     def __str__(self):
         return self.name
 
@@ -89,6 +89,9 @@ class Title(Model):
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
+
+    def __str__(self):
+        return self.name
 
 
 class Review(Model):
