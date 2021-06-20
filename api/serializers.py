@@ -29,31 +29,38 @@ class ReviewSerializer(ModelSerializer):
     author = SlugRelatedField(
         read_only=True,
         slug_field='username',
-        default=CurrentUserDefault()
     )
 
     class Meta:
         fields = '__all__'
         model = Review
-        read_only_fields = ['title', 'pub_date']
-        validators = [UniqueTogetherValidator(
-            queryset=Review.objects.all(),
-            fields=['author', 'title'],
-            message=REVIEW_EXISTS
-        )]
+        read_only_fields = ('title', 'pub_date')
+        # validators = [UniqueTogetherValidator(
+        #     queryset=Review.objects.all(),
+        #     fields=['author', 'title'],
+        #     message=REVIEW_EXISTS
+        # )]
+    
+    def validate(self, attrs):
+        if self.context['view'].kwargs.get('review_id', None) is not None:
+            return attrs
+        if Review.objects.filter(author=self.context['request'].user,
+                                 title=self.context['view'].kwargs.get('title_id')).exists():
+            raise ValidationError('Вы уже оставляли свой отзыв на данное произведение!')
+        return attrs
+
 
 
 class CommentSerializer(ModelSerializer):
     author = SlugRelatedField(
         read_only=True,
         slug_field='username',
-        default=CurrentUserDefault()
     )
 
     class Meta:
         fields = '__all__'
         model = Comment
-        read_only_fields = ['review', 'pub_date']
+        read_only_fields = ('review', 'pub_date')
 
 
 class CategoriesSerializer(ModelSerializer):

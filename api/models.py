@@ -90,6 +90,9 @@ class Title(Model):
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
+    def __str__(self):
+        return self.name
+
 
 class Review(Model):
     author = ForeignKey(
@@ -182,6 +185,6 @@ class Comment(Model):
 
     def __str__(self):
         return(
-            f'Комментарий: {self.text[:15]} К отзыву: {self.title.text[:15]}'
+            f'Комментарий: {self.text[:15]} К отзыву: {self.review.text[:15]}'
             f' От автора: {self.author.username} Добавлен: {self.pub_date}'
         )

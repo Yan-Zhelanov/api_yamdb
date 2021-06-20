@@ -8,10 +8,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
-from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_400_BAD_REQUEST,
-                                   HTTP_405_METHOD_NOT_ALLOWED)
+                                   HTTP_405_METHOD_NOT_ALLOWED,
+                                   HTTP_201_CREATED)
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -20,12 +21,12 @@ from rest_framework_simplejwt.tokens import AccessToken
 from users.models import ROLES
 
 from .filters import TitleFilter
-from .models import Category, Genre, Title, User
+from .models import Category, Genre, Title, User, Review
 from .permissions import (IsAdminOrMe, IsAdminOrReadOnly, IsAuthorOrReadOnly,
                           IsModeratorOrReadOnly)
 from .serializers import (CategoriesSerializer, GenresSerializer,
                           ReviewSerializer, TitlesSerializerGet,
-                          TitlesSerializerPost, UserSerializer)
+                          TitlesSerializerPost, UserSerializer, CommentSerializer)
 
 EMAIL_CANNOT_BE_EMPTY = 'O-ops! E-mail cannot be empty!'
 EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
@@ -124,19 +125,17 @@ class GetToken(APIView):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    # pagination_class = CursorPagination
-    permission_classes = [IsAdminOrReadOnly,
-                          IsAuthorOrReadOnly,
-                          IsModeratorOrReadOnly]
-    filter_backends = [DjangoFilterBackend]
-    throttle_classes = [UserRateThrottle,
-                        AnonRateThrottle]
+    permission_classes = (IsAuthorOrReadOnly,
+                          IsModeratorOrReadOnly,
+                          IsAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
 
     def get_queryset(self):
         return self.get_title().reviews.all()
+    
 
     def perform_create(self, serializer):
         serializer.save(
@@ -161,27 +160,25 @@ class ReviewViewSet(ModelViewSet):
 
 
 class CommentViewSet(ModelViewSet):
-    serializer_class = ReviewSerializer
-    # pagination_class = CursorPagination
-    permission_classes = [IsAdminOrReadOnly,
-                          IsAuthorOrReadOnly,
-                          IsModeratorOrReadOnly]
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthorOrReadOnly,
+                          IsModeratorOrReadOnly,
+                          IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend]
-    throttle_classes = [UserRateThrottle,
-                        AnonRateThrottle]
 
     def get_review(self):
-        title = get_object_or_404(Title, id=self.kwargs['title_id'])
-        return get_object_or_404(title.reviews,
+        review = get_object_or_404(Review,
+                                 id=self.kwargs['review_id'])
+        return get_object_or_404(Review,
                                  id=self.kwargs['review_id'])
 
     def get_queryset(self):
-        return self.get_review.comments.all()
+        return self.get_review().comments.all()
 
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
-            review=self.get_review
+            review=self.get_review()
         )
 
 
