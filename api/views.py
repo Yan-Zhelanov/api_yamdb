@@ -11,9 +11,7 @@ from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_400_BAD_REQUEST,
-                                   HTTP_405_METHOD_NOT_ALLOWED,
-                                   HTTP_201_CREATED)
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+                                   HTTP_405_METHOD_NOT_ALLOWED)
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.tokens import AccessToken
@@ -22,11 +20,13 @@ from users.models import ROLES
 
 from .filters import TitleFilter
 from .models import Category, Genre, Title, User, Review
-from .permissions import (IsAdminOrMe, IsAdminOrReadOnly, IsAuthorOrReadOnly,
-                          IsModeratorOrReadOnly)
-from .serializers import (CategoriesSerializer, GenresSerializer,
-                          ReviewSerializer, TitlesSerializerGet,
-                          TitlesSerializerPost, UserSerializer, CommentSerializer)
+from .permissions import (IsAdminOrMe, IsAdminOrReadOnly,
+                          IsAuthenticatedOrReadOnly,
+                          IsAuthorOrModeratorOrAdminOrReadOnly)
+from .serializers import (CategoriesSerializer, CommentSerializer,
+                          GenresSerializer, ReviewSerializer,
+                          TitlesSerializerGet, TitlesSerializerPost,
+                          UserSerializer)
 
 EMAIL_CANNOT_BE_EMPTY = 'O-ops! E-mail cannot be empty!'
 EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
@@ -42,10 +42,9 @@ def update_serializer_role(self, serializer):
     role = self.request.POST.get('role', None)
     if role is None:
         return serializer.save()
-    for key, _role in ROLES:
-        if _role == role:
-            return serializer.save(role=key)
-    serializer.save()
+    if role in ROLES:
+        return serializer.save(role=role)
+    return serializer.save()
 
 
 class UserViewSet(ModelViewSet):
@@ -59,8 +58,7 @@ class UserViewSet(ModelViewSet):
         username = self.kwargs['pk']
         if username == 'me':
             return self.request.user
-        user = get_object_or_404(User, username=username)
-        return user
+        return get_object_or_404(User, username=username)
 
     def perform_create(self, serializer):
         update_serializer_role(self, serializer)
@@ -76,7 +74,7 @@ class UserViewSet(ModelViewSet):
 
 class SendEmail(APIView):
     permission_classes = (AllowAny,)
-    
+
     def post(self, request):
         email = request.POST.get('email', None)
         if email is None:
@@ -125,10 +123,9 @@ class GetToken(APIView):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthorOrReadOnly,
-                          IsModeratorOrReadOnly,
-                          IsAdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAuthorOrModeratorOrAdminOrReadOnly,)
+    filter_backends = [DjangoFilterBackend]
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -142,33 +139,18 @@ class ReviewViewSet(ModelViewSet):
             author=self.request.user,
             title=self.get_title()
         )
-        TitlesSerializerPost(
-            instance=self.get_title(),
-            data={'rating': self.get_object().aggregate(
-                Avg('score')
-            )}
-        )
 
     def perform_update(self, serializer):
         serializer.save()
-        TitlesSerializerPost(
-            instance=self.get_title(),
-            data={'rating': self.get_object().aggregate(
-                Avg('score')
-            )}
-        )
 
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthorOrReadOnly,
-                          IsModeratorOrReadOnly,
-                          IsAdminOrReadOnly]
-    filter_backends = [DjangoFilterBackend]
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAuthorOrModeratorOrAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
 
     def get_review(self):
-        review = get_object_or_404(Review,
-                                 id=self.kwargs['review_id'])
         return get_object_or_404(Review,
                                  id=self.kwargs['review_id'])
 
