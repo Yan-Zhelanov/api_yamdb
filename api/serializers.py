@@ -10,6 +10,8 @@ from .validators import custom_year_validator
 
 EMAIL_IS_EXISTS = 'O-ops! E-Mail "{email}" already exists!'
 REVIEW_EXISTS = 'O-ops! Review already exists!'
+SCORE_NOT_VALID = 'O-ops! Score not in range from 1 to 10!'
+SCORE_RANGE = range(1, 11)
 
 
 class UserSerializer(ModelSerializer):
@@ -38,8 +40,11 @@ class ReviewSerializer(ModelSerializer):
         fields = '__all__'
         model = Review
         read_only_fields = ['title', 'pub_date']
+        write_only_fields = ['title']
 
     def validate(self, attrs):
+        if attrs['score'].exists() and attrs['score'] not in SCORE_RANGE:
+            raise ValidationError(SCORE_NOT_VALID)
         if self.context['view'].action == 'partial_update':
             return attrs
         if Review.objects.filter(
@@ -61,6 +66,7 @@ class CommentSerializer(ModelSerializer):
         fields = '__all__'
         model = Comment
         read_only_fields = ['review', 'pub_date']
+        write_only_fields = ['review']
 
 
 class CategoriesSerializer(ModelSerializer):

@@ -139,9 +139,6 @@ class ReviewViewSet(ModelViewSet):
             title=self.get_title()
         )
 
-    def perform_update(self, serializer):
-        serializer.save()
-
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
