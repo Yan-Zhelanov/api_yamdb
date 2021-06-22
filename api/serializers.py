@@ -1,6 +1,12 @@
-from rest_framework.serializers import (ChoiceField, CurrentUserDefault,
-                                        EmailField, FloatField, IntegerField,
-                                        ModelSerializer, SlugRelatedField)
+from rest_framework.serializers import (
+    ChoiceField,
+    CurrentUserDefault,
+    EmailField,
+    FloatField,
+    IntegerField,
+    ModelSerializer,
+    SlugRelatedField
+)
 from rest_framework.validators import ValidationError
 
 from users.models import ROLES
@@ -8,7 +14,6 @@ from users.models import ROLES
 from .models import Category, Comment, Genre, Review, Title, User
 from .validators import custom_year_validator
 
-EMAIL_IS_EXISTS = 'O-ops! E-Mail "{email}" already exists!'
 REVIEW_EXISTS = 'O-ops! Review already exists!'
 
 
@@ -20,11 +25,6 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = ('first_name', 'last_name', 'username', 'bio', 'email',
                   'role')
-
-    def validate_email(self, email):
-        if User.objects.filter(email=email).exists():
-            raise ValidationError(EMAIL_IS_EXISTS.format(email=email))
-        return email
 
 
 class ReviewSerializer(ModelSerializer):
@@ -39,11 +39,11 @@ class ReviewSerializer(ModelSerializer):
         read_only_fields = ['title', 'pub_date']
 
     def validate(self, attrs):
-        if self.context['view'].action == 'partial_update':
+        if self.context['request'].method != 'POST':
             return attrs
         if Review.objects.filter(
             author=self.context['request'].user,
-            title=self.context['view'].kwargs.get('title_id', None)
+            title=self.context['view'].kwargs.get('title_id')
         ).exists():
             raise ValidationError(REVIEW_EXISTS)
         return attrs
