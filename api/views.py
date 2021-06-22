@@ -8,7 +8,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
-from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (SAFE_METHODS, AllowAny,
+                                        IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_400_BAD_REQUEST,
                                    HTTP_405_METHOD_NOT_ALLOWED)
@@ -19,7 +21,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from users.models import ROLES
 
 from .filters import TitleFilter
-from .models import Category, Genre, Title, User, Review
+from .models import Category, Genre, Review, Title, User
 from .permissions import (IsAdminOrMe, IsAdminOrReadOnly,
                           IsAuthenticatedOrReadOnly,
                           IsAuthorOrModeratorOrAdminOrReadOnly)
@@ -38,15 +40,6 @@ EMAIL_TEXT = ('You secret code for getting the token: {confirmation_code}\n'
               'Don\'t sent it on to anyone!')
 
 
-def update_serializer_role(self, serializer):
-    role = self.request.POST.get('role', None)
-    if role is None:
-        return serializer.save()
-    if role in ROLES:
-        return serializer.save(role=role)
-    return serializer.save()
-
-
 class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsAuthenticated, IsAdminOrMe,)
@@ -60,11 +53,20 @@ class UserViewSet(ModelViewSet):
             return self.request.user
         return get_object_or_404(User, username=username)
 
+    def update_serializer_role(self, serializer):
+        role = self.request.POST.get('role', None)
+        if role is None:
+            return serializer.save()
+        _, roles = ROLES
+        if role in roles:
+            return serializer.save(role=role)
+        return serializer.save()
+
     def perform_create(self, serializer):
-        update_serializer_role(self, serializer)
+        self.update_serializer_role(serializer)
 
     def perform_update(self, serializer):
-        update_serializer_role(self, serializer)
+        self.update_serializer_role(serializer)
 
     def destroy(self, request, *args, **kwargs):
         if self.kwargs.get('pk', None) == 'me':
