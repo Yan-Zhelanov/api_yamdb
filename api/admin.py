@@ -3,7 +3,8 @@ from django.contrib.admin import ModelAdmin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserChangeForm, CustomUserCreationForm
-from .models import Category, Comment, Genre, Review, Title, CustomUser
+from .models import Category, Comment, CustomUser, Genre, Review, Title
+
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
@@ -30,6 +31,7 @@ class CustomUserAdmin(UserAdmin):
         return obj.get_role_display()
 
     get_role.short_description = 'Role'
+
 
 @admin.register(Review)
 class ReviewAdmin(ModelAdmin):

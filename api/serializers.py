@@ -1,17 +1,15 @@
-from rest_framework.serializers import (ChoiceField,
+from rest_framework.serializers import (CharField,
+                                        ChoiceField,
+                                        CurrentUserDefault,
                                         EmailField,
                                         FloatField,
-                                        IntegerField,
                                         ModelSerializer,
-                                        SlugRelatedField,
                                         Serializer,
-                                        CharField,
-                                        CurrentUserDefault)
+                                        SlugRelatedField)
 from rest_framework.validators import ValidationError
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .models import Category, Comment, Genre, Review, Title, CustomUser, ROLES
-from .validators import custom_year_validator
+from .models import ROLES, Category, Comment, CustomUser, Genre, Review, Title
 
 EMAIL_SUCCESSFULLY_SENT = 'Email sent! Please, check your inbox or spam.'
 EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
@@ -23,6 +21,7 @@ EMAIL_IS_EXISTS = 'O-ops! E-Mail "{email}" already exists!'
 REVIEW_EXISTS = 'O-ops! Review already exists!'
 SCORE_NOT_VALID = 'O-ops! Score not in range from 1 to 10!'
 SCORE_RANGE = range(1, 11)
+
 
 class GetTokenSerializer(Serializer):
     email = EmailField(required=True)
@@ -52,9 +51,9 @@ class UserSerializer(ModelSerializer):
             'role'
         )
 
-    def validate_email(self, email): 
-        if CustomUser.objects.filter(email=email).exists(): 
-            raise ValidationError(EMAIL_IS_EXISTS.format(email=email)) 
+    def validate_email(self, email):
+        if CustomUser.objects.filter(email=email).exists():
+            raise ValidationError(EMAIL_IS_EXISTS.format(email=email))
         return email
 
 

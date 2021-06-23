@@ -4,18 +4,17 @@ from django.db.models import (CASCADE,
                               SET_NULL,
                               CharField,
                               DateTimeField,
+                              EmailField,
                               ForeignKey,
-                              IntegerField,
                               ManyToManyField,
                               Model,
+                              PositiveSmallIntegerField,
                               SlugField,
                               TextField,
-                              UniqueConstraint,
-                              EmailField,
-                              PositiveSmallIntegerField)
+                              UniqueConstraint)
 
+from .roles import ADMIN, MODERATOR, USER
 from .validators import custom_year_validator
-from .roles import USER, MODERATOR, ADMIN
 
 ROLES = (
     (USER, USER),

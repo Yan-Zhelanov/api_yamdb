@@ -12,11 +12,11 @@ python manage.py shell
 ```python
 from data.import_data import import_data
 ```
-
 3. Run script:
 ```python
 # If you need print errors:
 import_data(True)
+
 # or:
 import_data()
 ```
