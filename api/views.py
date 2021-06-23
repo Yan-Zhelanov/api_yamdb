@@ -9,7 +9,8 @@ from rest_framework_simplejwt.views import TokenViewBase
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin,
                                    DestroyModelMixin,
-                                   ListModelMixin)
+                                   ListModelMixin,
+                                   UpdateModelMixin)
 from rest_framework.permissions import (SAFE_METHODS,
                                         AllowAny,
                                         IsAuthenticated,
@@ -43,8 +44,14 @@ CONFIRMATION_CODE_CANNOT_BE_EMPTY = 'O-ops! Confirmation code cannot be empty!'
 EMAIL_SUBJECT = 'YamDB - Confirmation Code'
 EMAIL_TEXT = ('You secret code for getting the token: {confirmation_code}\n'
               'Don\'t sent it on to anyone!')
-KEY_FOR_MY_PROFILE = 'me'
 CONFIRMATION_CODE_LENGTH = 16
+ALLOWED_METHODS = ('get', 'post', 'patch', 'delete')
+
+
+class CreateDeleteListViewSet(
+    CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet
+):
+    pass
 
 
 class UserViewSet(ModelViewSet):
@@ -54,6 +61,7 @@ class UserViewSet(ModelViewSet):
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
+    http_method_names = ALLOWED_METHODS
 
     @action(methods=('GET', 'PATCH',), detail=False, permission_classes=(IsAuthenticated,))
     def me(self, request):
@@ -113,8 +121,6 @@ class GetToken(TokenViewBase):
     permission_classes = (AllowAny,)
     serializer_class = GetTokenSerializer
 
-class GetToken(APIView):
-    permission_classes = (AllowAny,)
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
@@ -123,6 +129,7 @@ class ReviewViewSet(ModelViewSet):
         IsAuthorOrModeratorOrAdminOrReadOnly,
     )
     filter_backends = (DjangoFilterBackend,)
+    http_method_names = ALLOWED_METHODS
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -144,6 +151,7 @@ class CommentViewSet(ModelViewSet):
         IsAuthorOrModeratorOrAdminOrReadOnly,
     )
     filter_backends = (DjangoFilterBackend,)
+    http_method_names = ALLOWED_METHODS
 
     def get_review(self):
         title = get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -161,12 +169,7 @@ class CommentViewSet(ModelViewSet):
         )
 
 
-class CreateDelListViewset(CreateModelMixin, DestroyModelMixin,
-                           ListModelMixin, GenericViewSet):
-    pass
-
-
-class CategoriesViewSet(CreateDelListViewset):
+class CategoriesViewSet(CreateDeleteListViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -175,7 +178,7 @@ class CategoriesViewSet(CreateDelListViewset):
     search_fields = ('name',)
 
 
-class GenresViewSet(CreateDelListViewset):
+class GenresViewSet(CreateDeleteListViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenresSerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -191,6 +194,7 @@ class TitlesViewset(ModelViewSet):
     ).order_by('name')
     filterset_class = TitleFilter
     filter_backends = (DjangoFilterBackend,)
+    http_method_names = ALLOWED_METHODS
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

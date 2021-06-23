@@ -131,8 +131,8 @@ class Title(Model):
     category = ForeignKey(
         Category,
         on_delete=SET_NULL,
-        blank=True,
         null=True,
+        blank=True,
         related_name='titles',
         verbose_name='Категория'
     )
@@ -188,8 +188,10 @@ class Review(Model):
         verbose_name_plural = 'Отзывы'
         ordering = ('-pub_date',)
         constraints = [
-            UniqueConstraint(fields=['title', 'author'],
-                             name='reviews'),
+            UniqueConstraint(
+                fields=['title', 'author'],
+                name='reviews'
+            ),
         ]
 
     def __str__(self):
