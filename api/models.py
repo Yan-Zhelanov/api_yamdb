@@ -36,9 +36,6 @@ class CustomUser(AbstractUser):
     email = EmailField(
         verbose_name='E-Mail',
         unique=True,
-        error_messages={
-            'unique': 'asddasds'
-        }
     )
     bio = TextField(
         verbose_name="О себе",
