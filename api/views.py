@@ -1,4 +1,3 @@
-import secrets
 import string
 
 from django.core.mail import send_mail
@@ -128,7 +127,6 @@ class ReviewViewSet(ModelViewSet):
 
     def get_queryset(self):
         return self.get_title().reviews.all()
-    
 
     def perform_create(self, serializer):
         serializer.save(
@@ -149,8 +147,10 @@ class CommentViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
 
     def get_review(self):
-        return get_object_or_404(Review,
-                                 id=self.kwargs['review_id'])
+        title = get_object_or_404(Title, id=self.kwargs['title_id'])
+        return get_object_or_404(
+            title.reviews, id=self.kwargs['review_id']
+        )
 
     def get_queryset(self):
         return self.get_review().comments.all()
@@ -195,5 +195,5 @@ class TitlesViewset(ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
-            return TitlesSerializerGet
-        return TitlesSerializerPost
+            return TitleReadSerializer
+        return TitleWriteSerializer

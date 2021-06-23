@@ -109,12 +109,12 @@ class TitleSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class TitlesSerializerGet(TitleSerializer):
-    genre = GenresSerializer(many=True)
-    category = CategoriesSerializer()
+class TitleReadSerializer(TitleSerializer):
+    genre = GenresSerializer(read_only=True, many=True)
+    category = CategoriesSerializer(read_only=True)
 
 
-class TitlesSerializerPost(TitleSerializer):
+class TitleWriteSerializer(TitleSerializer):
     category = SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all(),
@@ -124,8 +124,4 @@ class TitlesSerializerPost(TitleSerializer):
         slug_field='slug',
         queryset=Genre.objects.all(),
         many=True
-    )
-    year = IntegerField(
-        required=False,
-        validators=(custom_year_validator,)
     )

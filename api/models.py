@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import (CASCADE,
-                              DO_NOTHING,
+                              SET_NULL,
                               CharField,
                               DateTimeField,
                               ForeignKey,
@@ -11,7 +11,8 @@ from django.db.models import (CASCADE,
                               SlugField,
                               TextField,
                               UniqueConstraint,
-                              EmailField)
+                              EmailField,
+                              PositiveSmallIntegerField)
 
 from .validators import custom_year_validator
 from .roles import USER, MODERATOR, ADMIN
@@ -115,7 +116,7 @@ class Title(Model):
         db_index=True,
         verbose_name='Название'
     )
-    year = IntegerField(
+    year = PositiveSmallIntegerField(
         null=True,
         verbose_name='Год',
         validators=[
@@ -124,11 +125,12 @@ class Title(Model):
     )
     description = TextField(
         null=True,
+        blank=True,
         verbose_name='Описание'
     )
     category = ForeignKey(
         Category,
-        on_delete=DO_NOTHING,
+        on_delete=SET_NULL,
         blank=True,
         null=True,
         related_name='titles',
