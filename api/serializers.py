@@ -7,20 +7,16 @@ from rest_framework.serializers import (ChoiceField,
                                         Serializer,
                                         CharField)
 from rest_framework.validators import ValidationError
+from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import Category, Comment, Genre, Review, Title, CustomUser, ROLES
 from .validators import custom_year_validator
 
+EMAIL_SUCCESSFULLY_SENT = 'Email sent! Please, check your inbox or spam.'
+EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
+CONFIRMATION_CODE_INVALID = 'O-ops! Invalid confirmation code!'
 REVIEW_EXISTS = 'O-ops! Review already exists!'
 EMAIL_IS_EXISTS = 'O-ops! E-mail already exists!'
-
-
-class SendEmailSerializer(Serializer):
-    email = EmailField(required=True)
-
-    class Meta:
-        model = CustomUser
-        fields = ('email',)
 
 
 class GetTokenSerializer(Serializer):
@@ -30,6 +26,14 @@ class GetTokenSerializer(Serializer):
     class Meta:
         model = CustomUser
         fields = ('email', 'confirmation_code')
+
+    def validate(self, attrs):
+        user = CustomUser.objects.filter(email=attrs.get('email'))
+        if not user.exists():
+            raise ValidationError({'error': EMAIL_NOT_FOUND_ERROR})
+        if user.first().confirmation_code != attrs.get('confirmation_code'):
+            raise ValidationError({'error': CONFIRMATION_CODE_INVALID})
+        return {'token': str(AccessToken.for_user(user.first()))}
 
 
 class UserSerializer(ModelSerializer):

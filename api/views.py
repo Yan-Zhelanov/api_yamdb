@@ -4,7 +4,9 @@ import string
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from django.utils.crypto import get_random_string
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework_simplejwt.views import TokenViewBase
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin,
                                    DestroyModelMixin,
@@ -14,12 +16,10 @@ from rest_framework.permissions import (SAFE_METHODS,
                                         IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.status import (HTTP_400_BAD_REQUEST,
-                                   HTTP_405_METHOD_NOT_ALLOWED)
+from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import ROLES
 
@@ -27,8 +27,7 @@ from .filters import TitleFilter
 from .models import Category, Genre, Review, Title, CustomUser
 from .permissions import (IsAdmin,
                           IsAdminOrReadOnly,
-                          IsAuthorOrModeratorOrAdminOrReadOnly,
-                          IsOwner)
+                          IsAuthorOrModeratorOrAdminOrReadOnly,)
 from .serializers import (CategoriesSerializer,
                           CommentSerializer,
                           GenresSerializer,
@@ -36,18 +35,17 @@ from .serializers import (CategoriesSerializer,
                           TitlesSerializerGet,
                           TitlesSerializerPost,
                           UserSerializer,
-                          SendEmailSerializer,
-                          GetTokenSerializer)
+                          GetTokenSerializer,
+                          EMAIL_NOT_FOUND_ERROR,
+                          EMAIL_SUCCESSFULLY_SENT)
 
 EMAIL_CANNOT_BE_EMPTY = 'O-ops! E-mail cannot be empty!'
-EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
 CONFIRMATION_CODE_CANNOT_BE_EMPTY = 'O-ops! Confirmation code cannot be empty!'
-CONFIRMATION_CODE_INVALID = 'O-ops! Invalid confirmation code!'
-EMAIL_SUCCESSFULLY_SENT = 'Email sent! Please, check your inbox or spam.'
 EMAIL_SUBJECT = 'YamDB - Confirmation Code'
 EMAIL_TEXT = ('You secret code for getting the token: {confirmation_code}\n'
               'Don\'t sent it on to anyone!')
 KEY_FOR_MY_PROFILE = 'me'
+CONFIRMATION_CODE_LENGTH = 16
 
 
 class UserViewSet(ModelViewSet):
@@ -56,11 +54,18 @@ class UserViewSet(ModelViewSet):
     queryset = CustomUser.objects.all()
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
+    lookup_field = 'username'
 
-    @action(methods=('GET', 'PUT',), detail=False, permission_classes=(IsAuthenticated,))
+    @action(methods=('GET', 'PATCH',), detail=False, permission_classes=(IsAuthenticated,))
     def me(self, request):
-        return request.user
-    
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user)
+        else:
+            serializer = self.get_serializer(request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        return Response(serializer.data)
+
     def update_serializer_role(self, serializer):
         role = self.request.data.get('role')
         if role is None:
@@ -79,7 +84,6 @@ class UserViewSet(ModelViewSet):
 
 class SendEmail(APIView):
     permission_classes = (AllowAny,)
-    serializer_class = SendEmailSerializer
 
     def post(self, request):
         email = request.data.get('email')
@@ -95,9 +99,7 @@ class SendEmail(APIView):
                 status=HTTP_400_BAD_REQUEST
             )
         alphabet = string.ascii_letters + string.digits
-        confirmation_code = ''.join(
-            secrets.choice(alphabet) for i in range(16)
-        )
+        confirmation_code = get_random_string(CONFIRMATION_CODE_LENGTH, alphabet)
         send_mail(
             EMAIL_SUBJECT,
             EMAIL_TEXT.format(confirmation_code=confirmation_code),
@@ -108,37 +110,9 @@ class SendEmail(APIView):
         return Response({'response': EMAIL_SUCCESSFULLY_SENT})
 
 
-class GetToken(APIView):
+class GetToken(TokenViewBase):
     permission_classes = (AllowAny,)
     serializer_class = GetTokenSerializer
-
-    def post(self, request):
-        email = request.data.get('email')
-        if email is None:
-            return Response(
-                {'error': EMAIL_CANNOT_BE_EMPTY},
-                status=HTTP_400_BAD_REQUEST
-            )
-        user = CustomUser.objects.filter(email=email)
-        if not user.exists():
-            return Response(
-                {'error': EMAIL_NOT_FOUND_ERROR},
-                status=HTTP_400_BAD_REQUEST
-            )
-        user = user.first()
-        confirmation_code = request.data.get('confirmation_code')
-        if confirmation_code is None:
-            return Response(
-                {'error': CONFIRMATION_CODE_CANNOT_BE_EMPTY},
-                status=HTTP_400_BAD_REQUEST
-            )
-        if confirmation_code != user.confirmation_code:
-            return Response(
-                {'error': CONFIRMATION_CODE_INVALID},
-                status=HTTP_400_BAD_REQUEST
-            )
-        token = AccessToken.for_user(user)
-        return Response({'token': str(token)})
 
 
 class ReviewViewSet(ModelViewSet):
