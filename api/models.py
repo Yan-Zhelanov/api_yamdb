@@ -1,12 +1,64 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import (CASCADE, DO_NOTHING, CharField, DateTimeField,
-                              ForeignKey, IntegerField, ManyToManyField, Model,
-                              SlugField, TextField, UniqueConstraint)
+from django.db.models import (CASCADE,
+                              SET_NULL,
+                              CharField,
+                              DateTimeField,
+                              EmailField,
+                              ForeignKey,
+                              ManyToManyField,
+                              Model,
+                              PositiveSmallIntegerField,
+                              SlugField,
+                              TextField,
+                              UniqueConstraint)
 
+from .roles import ADMIN, MODERATOR, USER
 from .validators import custom_year_validator
 
-User = get_user_model()
+ROLES = (
+    (USER, USER),
+    (MODERATOR, MODERATOR),
+    (ADMIN, ADMIN),
+)
+
+
+def get_max_role_length(roles):
+    max_length = 0
+    for role, _ in roles:
+        if len(role) > max_length:
+            max_length = len(role)
+    return max_length
+
+
+class CustomUser(AbstractUser):
+    email = EmailField(
+        verbose_name='E-Mail',
+        unique=True,
+    )
+    bio = TextField(
+        verbose_name="О себе",
+        blank=True,
+        null=True,
+    )
+    role = CharField(
+        verbose_name='Уровень пользователя',
+        choices=ROLES,
+        default=USER,
+        max_length=get_max_role_length(ROLES)
+    )
+    confirmation_code = CharField(
+        verbose_name='Код подтверждения',
+        blank=True,
+        null=True,
+        max_length=64,
+    )
+
+    class Meta:
+        ordering = ('-id',)
+
+    def __str__(self):
+        return self.username
 
 
 class Category(Model):
@@ -60,7 +112,7 @@ class Title(Model):
         db_index=True,
         verbose_name='Название'
     )
-    year = IntegerField(
+    year = PositiveSmallIntegerField(
         null=True,
         verbose_name='Год',
         validators=[
@@ -69,13 +121,14 @@ class Title(Model):
     )
     description = TextField(
         null=True,
+        blank=True,
         verbose_name='Описание'
     )
     category = ForeignKey(
         Category,
-        on_delete=DO_NOTHING,
-        blank=True,
+        on_delete=SET_NULL,
         null=True,
+        blank=True,
         related_name='titles',
         verbose_name='Категория'
     )
@@ -96,42 +149,34 @@ class Title(Model):
 
 class Review(Model):
     author = ForeignKey(
-        User,
+        CustomUser,
         on_delete=CASCADE,
         related_name='reviews',
         verbose_name='Автор',
-        blank=False,
-        null=False
     )
     title = ForeignKey(
         Title,
         on_delete=CASCADE,
         related_name='reviews',
         verbose_name='Произведение',
-        blank=False,
-        null=False
     )
     text = TextField(
         verbose_name='Отзыв',
         help_text='Оставьте ваш отзыв',
         max_length=250,
-        blank=False,
-        null=False
     )
     pub_date = DateTimeField(
         'Дата публикации',
         auto_now_add=True,
         db_index=True
     )
-    score = IntegerField(
+    score = PositiveSmallIntegerField(
         default=10,
         help_text='Поставьте этому произведению оценку от 1 до 10',
         validators=[
             MaxValueValidator(10),
             MinValueValidator(1)
         ],
-        blank=False,
-        null=False
     )
 
     class Meta:
@@ -139,8 +184,10 @@ class Review(Model):
         verbose_name_plural = 'Отзывы'
         ordering = ('-pub_date',)
         constraints = [
-            UniqueConstraint(fields=['title', 'author'],
-                             name='reviews'),
+            UniqueConstraint(
+                fields=['title', 'author'],
+                name='reviews'
+            ),
         ]
 
     def __str__(self):
@@ -150,27 +197,21 @@ class Review(Model):
 
 class Comment(Model):
     author = ForeignKey(
-        User,
+        CustomUser,
         on_delete=CASCADE,
         related_name='comments',
         verbose_name='Автор',
-        blank=False,
-        null=False
     )
     review = ForeignKey(
         Review,
         on_delete=CASCADE,
         related_name='comments',
         verbose_name='Отзыв',
-        blank=False,
-        null=False
     )
     text = TextField(
         verbose_name='Комментарий',
         help_text='Напишите ваш комментарий',
         max_length=250,
-        blank=False,
-        null=False
     )
     pub_date = DateTimeField(
         'Дата публикации',
@@ -185,6 +226,6 @@ class Comment(Model):
 
     def __str__(self):
         return(
-            f'Комментарий: {self.text[:15]} К отзыву: {self.title.text[:15]}'
+            f'Комментарий: {self.text[:15]} К отзыву: {self.review.text[:15]}'
             f' От автора: {self.author.username} Добавлен: {self.pub_date}'
         )

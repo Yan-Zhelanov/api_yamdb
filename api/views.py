@@ -1,92 +1,117 @@
-import secrets
 import string
 
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from django.utils.crypto import get_random_string
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
+from rest_framework.mixins import (CreateModelMixin,
+                                   DestroyModelMixin,
                                    ListModelMixin)
-from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
+from rest_framework.permissions import (SAFE_METHODS,
+                                        AllowAny,
+                                        IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.status import (HTTP_400_BAD_REQUEST,
-                                   HTTP_405_METHOD_NOT_ALLOWED)
+from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework_simplejwt.tokens import AccessToken
-
-from users.models import ROLES
+from rest_framework_simplejwt.views import TokenViewBase
 
 from .filters import TitleFilter
-from .models import Category, Genre, Title, User
-from .permissions import (IsAdminOrMe, IsAdminOrReadOnly,
-                          IsAuthenticatedOrReadOnly,
+from .models import ROLES, Category, CustomUser, Genre, Title
+from .permissions import (IsAdmin,
+                          IsAdminOrReadOnly,
                           IsAuthorOrModeratorOrAdminOrReadOnly)
-from .serializers import (CategoriesSerializer, CommentSerializer,
-                          GenresSerializer, ReviewSerializer,
-                          TitlesSerializerGet, TitlesSerializerPost,
+from .serializers import (EMAIL_NOT_FOUND_ERROR,
+                          EMAIL_SUCCESSFULLY_SENT,
+                          CategoriesSerializer,
+                          CommentSerializer,
+                          GenresSerializer,
+                          GetTokenSerializer,
+                          ReviewSerializer,
+                          TitleReadSerializer,
+                          TitleWriteSerializer,
                           UserSerializer)
 
 EMAIL_CANNOT_BE_EMPTY = 'O-ops! E-mail cannot be empty!'
-EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
 CONFIRMATION_CODE_CANNOT_BE_EMPTY = 'O-ops! Confirmation code cannot be empty!'
-CONFIRMATION_CODE_INVALID = 'O-ops! Invalid confirmation code!'
-EMAIL_SUCCESSFULLY_SENT = 'Email sent! Please, check your inbox or spam.'
-EMAIL_SUBJECT = 'YamDB — Confirmation Code'
+EMAIL_SUBJECT = 'YamDB - Confirmation Code'
 EMAIL_TEXT = ('You secret code for getting the token: {confirmation_code}\n'
               'Don\'t sent it on to anyone!')
+CONFIRMATION_CODE_LENGTH = 16
+ALLOWED_METHODS = ('get', 'post', 'patch', 'delete')
 
 
-def update_serializer_role(self, serializer):
-    role = self.request.POST.get('role', None)
-    if role is None:
-        return serializer.save()
-    if role in ROLES:
-        return serializer.save(role=role)
-    return serializer.save()
+class CreateDeleteListViewSet(
+    CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet
+):
+    pass
 
 
 class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated, IsAdminOrMe,)
-    queryset = User.objects.all()
+    permission_classes = (IsAuthenticated, IsAdmin,)
+    queryset = CustomUser.objects.all()
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
+    lookup_field = 'username'
+    http_method_names = ALLOWED_METHODS
 
-    def get_object(self):
-        username = self.kwargs['pk']
-        if username == 'me':
-            return self.request.user
-        return get_object_or_404(User, username=username)
+    @action(
+        methods=('GET', 'PATCH',),
+        detail=False,
+        permission_classes=(IsAuthenticated,)
+    )
+    def me(self, request):
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user)
+        else:
+            serializer = self.get_serializer(
+                request.user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def update_serializer_role(self, serializer):
+        role = self.request.data.get('role')
+        if role is None:
+            return serializer.save()
+        for expected_role, _ in ROLES:
+            if role == expected_role:
+                return serializer.save(role=role)
+        return serializer.save()
 
     def perform_create(self, serializer):
-        update_serializer_role(self, serializer)
+        self.update_serializer_role(serializer)
 
     def perform_update(self, serializer):
-        update_serializer_role(self, serializer)
-
-    def destroy(self, request, *args, **kwargs):
-        if self.kwargs.get('pk', None) == 'me':
-            return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
-        return super().destroy(request, *args, **kwargs)
+        self.update_serializer_role(serializer)
 
 
 class SendEmail(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        email = request.POST.get('email', None)
+        email = request.data.get('email')
         if email is None:
-            return Response({'error': EMAIL_CANNOT_BE_EMPTY},
-                            status=HTTP_400_BAD_REQUEST)
-        user = User.objects.filter(email=email)
+            return Response(
+                {'error': EMAIL_CANNOT_BE_EMPTY},
+                status=HTTP_400_BAD_REQUEST
+            )
+        user = CustomUser.objects.filter(email=email)
         if not user.exists():
-            return Response({'error': EMAIL_NOT_FOUND_ERROR},
-                            status=HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': EMAIL_NOT_FOUND_ERROR},
+                status=HTTP_400_BAD_REQUEST
+            )
         alphabet = string.ascii_letters + string.digits
-        confirmation_code = ''.join(secrets.choice(alphabet)
-                                    for i in range(16))
+        confirmation_code = get_random_string(
+            CONFIRMATION_CODE_LENGTH, alphabet
+        )
         send_mail(
             EMAIL_SUBJECT,
             EMAIL_TEXT.format(confirmation_code=confirmation_code),
@@ -97,35 +122,19 @@ class SendEmail(APIView):
         return Response({'response': EMAIL_SUCCESSFULLY_SENT})
 
 
-class GetToken(APIView):
+class GetToken(TokenViewBase):
     permission_classes = (AllowAny,)
-
-    def post(self, request):
-        email = request.POST.get('email', None)
-        if email is None:
-            return Response({'error': EMAIL_CANNOT_BE_EMPTY},
-                            status=HTTP_400_BAD_REQUEST)
-        user = User.objects.filter(email=email)
-        if not user.exists():
-            return Response({'error': EMAIL_NOT_FOUND_ERROR},
-                            status=HTTP_400_BAD_REQUEST)
-        user = user.first()
-        confirmation_code = request.POST.get('confirmation_code', None)
-        if confirmation_code is None:
-            return Response({'error': CONFIRMATION_CODE_CANNOT_BE_EMPTY},
-                            status=HTTP_400_BAD_REQUEST)
-        if confirmation_code != user.confirmation_code:
-            return Response({'error': CONFIRMATION_CODE_INVALID},
-                            status=HTTP_400_BAD_REQUEST)
-        token = AccessToken.for_user(user)
-        return Response({'token': str(token)})
+    serializer_class = GetTokenSerializer
 
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsAuthorOrModeratorOrAdminOrReadOnly,)
-    filter_backends = [DjangoFilterBackend]
+    permission_classes = (
+        IsAuthenticatedOrReadOnly,
+        IsAuthorOrModeratorOrAdminOrReadOnly,
+    )
+    filter_backends = (DjangoFilterBackend,)
+    http_method_names = ALLOWED_METHODS
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -139,20 +148,21 @@ class ReviewViewSet(ModelViewSet):
             title=self.get_title()
         )
 
-    def perform_update(self, serializer):
-        serializer.save()
-
 
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,
-                          IsAuthorOrModeratorOrAdminOrReadOnly,)
+    permission_classes = (
+        IsAuthenticatedOrReadOnly,
+        IsAuthorOrModeratorOrAdminOrReadOnly,
+    )
     filter_backends = (DjangoFilterBackend,)
+    http_method_names = ALLOWED_METHODS
 
     def get_review(self):
         title = get_object_or_404(Title, id=self.kwargs['title_id'])
-        return get_object_or_404(title.reviews,
-                                 id=self.kwargs['review_id'])
+        return get_object_or_404(
+            title.reviews, id=self.kwargs['review_id']
+        )
 
     def get_queryset(self):
         return self.get_review().comments.all()
@@ -164,12 +174,7 @@ class CommentViewSet(ModelViewSet):
         )
 
 
-class CreateDelListViewset(CreateModelMixin, DestroyModelMixin,
-                           ListModelMixin, GenericViewSet):
-    pass
-
-
-class CategoriesViewSet(CreateDelListViewset):
+class CategoriesViewSet(CreateDeleteListViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -178,7 +183,7 @@ class CategoriesViewSet(CreateDelListViewset):
     search_fields = ('name',)
 
 
-class GenresViewSet(CreateDelListViewset):
+class GenresViewSet(CreateDeleteListViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenresSerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -190,11 +195,13 @@ class GenresViewSet(CreateDelListViewset):
 class TitlesViewset(ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     queryset = Title.objects.annotate(
-        rating=Avg('reviews__score')).order_by('name')
+        rating=Avg('reviews__score')
+    ).order_by('name')
     filterset_class = TitleFilter
     filter_backends = (DjangoFilterBackend,)
+    http_method_names = ALLOWED_METHODS
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
-            return TitlesSerializerGet
-        return TitlesSerializerPost
+            return TitleReadSerializer
+        return TitleWriteSerializer
