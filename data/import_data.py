@@ -11,6 +11,23 @@ def print_error(error, row, print_error):
         print('Error:', error.args, '\nRow:', row)
 
 
+def create_correct_row_fields(row, print_errors):
+    try:
+        if row.get('author'):
+            row['author'] = CustomUser.objects.get(pk=row['author'])
+        if row.get('review_id'):
+            row['review'] = Review.objects.get(pk=row['review_id'])
+        if row.get('title_id'):
+            row['title'] = Title.objects.get(pk=row['title_id'])
+        if row.get('category'):
+            row['category'] = Category.objects.get(pk=row['category'])
+        if row.get('genre'):
+            row['genre'] = Genre.objects.get(pk=row['genre'])
+    except ObjectDoesNotExist as error:
+        print_error(error, row, print_errors)
+    return row
+
+
 def create_models(file_path, model, print_errors):
     with open(file_path, encoding='utf-8', mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
@@ -18,19 +35,7 @@ def create_models(file_path, model, print_errors):
         successfull = 0
         for row in csv_reader:
             total_count += 1
-            try:
-                if row.get('author'):
-                    row['author'] = CustomUser.objects.get(pk=row['author'])
-                if row.get('review_id'):
-                    row['review'] = Review.objects.get(pk=row['review_id'])
-                if row.get('title_id'):
-                    row['title'] = Title.objects.get(pk=row['title_id'])
-                if row.get('category'):
-                    row['category'] = Category.objects.get(pk=row['category'])
-                if row.get('genre'):
-                    row['genre'] = Genre.objects.get(pk=row['genre'])
-            except ObjectDoesNotExist as error:
-                print_error(error, row, print_errors)
+            row = create_correct_row_fields(row, print_errors)
             try:
                 model.objects.get_or_create(**row)
                 successfull += 1
