@@ -5,7 +5,8 @@ from rest_framework.serializers import (ChoiceField,
                                         ModelSerializer,
                                         SlugRelatedField,
                                         Serializer,
-                                        CharField)
+                                        CharField,
+                                        CurrentUserDefault)
 from rest_framework.validators import ValidationError
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -18,6 +19,10 @@ CONFIRMATION_CODE_INVALID = 'O-ops! Invalid confirmation code!'
 REVIEW_EXISTS = 'O-ops! Review already exists!'
 EMAIL_IS_EXISTS = 'O-ops! E-mail already exists!'
 
+EMAIL_IS_EXISTS = 'O-ops! E-Mail "{email}" already exists!'
+REVIEW_EXISTS = 'O-ops! Review already exists!'
+SCORE_NOT_VALID = 'O-ops! Score not in range from 1 to 10!'
+SCORE_RANGE = range(1, 11)
 
 class GetTokenSerializer(Serializer):
     email = EmailField(required=True)
@@ -57,6 +62,7 @@ class ReviewSerializer(ModelSerializer):
     author = SlugRelatedField(
         read_only=True,
         slug_field='username',
+        default=CurrentUserDefault()
     )
 
     class Meta:
@@ -79,6 +85,7 @@ class CommentSerializer(ModelSerializer):
     author = SlugRelatedField(
         read_only=True,
         slug_field='username',
+        default=CurrentUserDefault()
     )
 
     class Meta:

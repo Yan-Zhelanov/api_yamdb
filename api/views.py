@@ -113,6 +113,8 @@ class GetToken(TokenViewBase):
     permission_classes = (AllowAny,)
     serializer_class = GetTokenSerializer
 
+class GetToken(APIView):
+    permission_classes = (AllowAny,)
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
@@ -133,9 +135,6 @@ class ReviewViewSet(ModelViewSet):
             author=self.request.user,
             title=self.get_title()
         )
-
-    def perform_update(self, serializer):
-        serializer.save()
 
 
 class CommentViewSet(ModelViewSet):

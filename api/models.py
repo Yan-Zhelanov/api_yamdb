@@ -157,38 +157,30 @@ class Review(Model):
         on_delete=CASCADE,
         related_name='reviews',
         verbose_name='Автор',
-        blank=False,
-        null=False
     )
     title = ForeignKey(
         Title,
         on_delete=CASCADE,
         related_name='reviews',
         verbose_name='Произведение',
-        blank=False,
-        null=False
     )
     text = TextField(
         verbose_name='Отзыв',
         help_text='Оставьте ваш отзыв',
         max_length=250,
-        blank=False,
-        null=False
     )
     pub_date = DateTimeField(
         'Дата публикации',
         auto_now_add=True,
         db_index=True
     )
-    score = IntegerField(
+    score = PositiveSmallIntegerField(
         default=10,
         help_text='Поставьте этому произведению оценку от 1 до 10',
         validators=[
             MaxValueValidator(10),
             MinValueValidator(1)
         ],
-        blank=False,
-        null=False
     )
 
     class Meta:
@@ -211,23 +203,17 @@ class Comment(Model):
         on_delete=CASCADE,
         related_name='comments',
         verbose_name='Автор',
-        blank=False,
-        null=False
     )
     review = ForeignKey(
         Review,
         on_delete=CASCADE,
         related_name='comments',
         verbose_name='Отзыв',
-        blank=False,
-        null=False
     )
     text = TextField(
         verbose_name='Комментарий',
         help_text='Напишите ваш комментарий',
         max_length=250,
-        blank=False,
-        null=False
     )
     pub_date = DateTimeField(
         'Дата публикации',
