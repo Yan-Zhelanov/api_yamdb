@@ -1,20 +1,35 @@
-from rest_framework.serializers import (
-    ChoiceField,
-    CurrentUserDefault,
-    EmailField,
-    FloatField,
-    IntegerField,
-    ModelSerializer,
-    SlugRelatedField
-)
+from rest_framework.serializers import (ChoiceField,
+                                        EmailField,
+                                        FloatField,
+                                        IntegerField,
+                                        ModelSerializer,
+                                        SlugRelatedField,
+                                        Serializer,
+                                        CharField)
 from rest_framework.validators import ValidationError
 
-from users.models import ROLES
-
-from .models import Category, Comment, Genre, Review, Title, User
+from .models import Category, Comment, Genre, Review, Title, CustomUser, ROLES
 from .validators import custom_year_validator
 
 REVIEW_EXISTS = 'O-ops! Review already exists!'
+EMAIL_IS_EXISTS = 'O-ops! E-mail already exists!'
+
+
+class SendEmailSerializer(Serializer):
+    email = EmailField(required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('email',)
+
+
+class GetTokenSerializer(Serializer):
+    email = EmailField(required=True)
+    confirmation_code = CharField(required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('email', 'confirmation_code')
 
 
 class UserSerializer(ModelSerializer):
@@ -22,9 +37,16 @@ class UserSerializer(ModelSerializer):
     email = EmailField(required=True)
 
     class Meta:
-        model = User
-        fields = ('first_name', 'last_name', 'username', 'bio', 'email',
-                  'role')
+        model = CustomUser
+        fields = (
+            'first_name', 'last_name', 'username', 'bio', 'email',
+            'role'
+        )
+
+    def validate_email(self, email): 
+        if CustomUser.objects.filter(email=email).exists(): 
+            raise ValidationError(EMAIL_IS_EXISTS.format(email=email)) 
+        return email
 
 
 class ReviewSerializer(ModelSerializer):

@@ -1,13 +1,17 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-from users.roles import USER, MODERATOR, ADMIN
+from .roles import ADMIN, MODERATOR
 
 
-class IsAdminOrMe(BasePermission):
+class IsOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.owner == request.user
+
+
+class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return (
-            view.kwargs.get('pk') == 'me'
-            or request.user.role == ADMIN
+            request.user.role == ADMIN
             or request.user.is_staff
             or request.user.is_superuser
         )

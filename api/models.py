@@ -1,12 +1,67 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import (CASCADE, DO_NOTHING, CharField, DateTimeField,
-                              ForeignKey, IntegerField, ManyToManyField, Model,
-                              SlugField, TextField, UniqueConstraint)
+from django.db.models import (CASCADE,
+                              DO_NOTHING,
+                              CharField,
+                              DateTimeField,
+                              ForeignKey,
+                              IntegerField,
+                              ManyToManyField,
+                              Model,
+                              SlugField,
+                              TextField,
+                              UniqueConstraint,
+                              EmailField)
 
 from .validators import custom_year_validator
+from .roles import USER, MODERATOR, ADMIN
 
-User = get_user_model()
+ROLES = (
+    (USER, USER),
+    (MODERATOR, MODERATOR),
+    (ADMIN, ADMIN),
+)
+
+
+def get_max_role_length(roles):
+    max_length = 0
+    for role, _ in roles:
+        if len(role) > max_length:
+            max_length = len(role)
+    return max_length
+
+
+class CustomUser(AbstractUser):
+    email = EmailField(
+        verbose_name='E-Mail',
+        unique=True,
+        error_messages={
+            'unique': 'asddasds'
+        }
+    )
+    bio = TextField(
+        verbose_name="О себе",
+        blank=True,
+        null=True,
+    )
+    role = CharField(
+        verbose_name='Уровень пользователя',
+        choices=ROLES,
+        default=USER,
+        max_length=get_max_role_length(ROLES)
+    )
+    confirmation_code = CharField(
+        verbose_name='Код подтверждения',
+        blank=True,
+        null=True,
+        max_length=64,
+    )
+
+    class Meta:
+        ordering = ('-id',)
+
+    def __str__(self):
+        return self.username
 
 
 class Category(Model):
@@ -96,7 +151,7 @@ class Title(Model):
 
 class Review(Model):
     author = ForeignKey(
-        User,
+        CustomUser,
         on_delete=CASCADE,
         related_name='reviews',
         verbose_name='Автор',
@@ -150,7 +205,7 @@ class Review(Model):
 
 class Comment(Model):
     author = ForeignKey(
-        User,
+        CustomUser,
         on_delete=CASCADE,
         related_name='comments',
         verbose_name='Автор',
