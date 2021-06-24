@@ -3,15 +3,15 @@ from django.contrib.admin import ModelAdmin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserChangeForm, CustomUserCreationForm
-from .models import Category, Comment, CustomUser, Genre, Review, Title
+from .models import Category, Comment, Genre, Review, Title, User
 
 
-@admin.register(CustomUser)
+@admin.register(User)
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
-    model = CustomUser
-    list_display = ('id', 'username', 'email', 'get_role')
+    model = User
+    list_display = ('id', 'username', 'email', 'role')
     list_filter = ('username', 'email', 'role')
     search_fields = ('username', 'email')
     fieldsets = (
@@ -26,11 +26,6 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
     empty_value = '<пусто>'
-
-    def get_role(self, obj):
-        return obj.get_role_display()
-
-    get_role.short_description = 'Role'
 
 
 @admin.register(Review)

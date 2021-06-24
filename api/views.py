@@ -7,13 +7,17 @@ from django.utils.crypto import get_random_string
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (CreateModelMixin,
-                                   DestroyModelMixin,
-                                   ListModelMixin)
-from rest_framework.permissions import (SAFE_METHODS,
-                                        AllowAny,
-                                        IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin
+)
+from rest_framework.permissions import (
+    SAFE_METHODS,
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
+)
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
@@ -21,20 +25,24 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.views import TokenViewBase
 
 from .filters import TitleFilter
-from .models import ROLES, Category, CustomUser, Genre, Title
-from .permissions import (IsAdmin,
-                          IsAdminOrReadOnly,
-                          IsAuthorOrModeratorOrAdminOrReadOnly)
-from .serializers import (EMAIL_NOT_FOUND_ERROR,
-                          EMAIL_SUCCESSFULLY_SENT,
-                          CategoriesSerializer,
-                          CommentSerializer,
-                          GenresSerializer,
-                          GetTokenSerializer,
-                          ReviewSerializer,
-                          TitleReadSerializer,
-                          TitleWriteSerializer,
-                          UserSerializer)
+from .models import ROLES, Category, User, Genre, Title
+from .permissions import (
+    IsAdmin,
+    IsAdminOrReadOnly,
+    IsAuthorOrModeratorOrAdminOrReadOnly
+)
+from .serializers import (
+    EMAIL_NOT_FOUND_ERROR,
+    EMAIL_SUCCESSFULLY_SENT,
+    CategoriesSerializer,
+    CommentSerializer,
+    GenresSerializer,
+    GetTokenSerializer,
+    ReviewSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
+    UserSerializer
+)
 
 EMAIL_CANNOT_BE_EMPTY = 'O-ops! E-mail cannot be empty!'
 CONFIRMATION_CODE_CANNOT_BE_EMPTY = 'O-ops! Confirmation code cannot be empty!'
@@ -54,7 +62,7 @@ class CreateDeleteListViewSet(
 class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsAuthenticated, IsAdmin,)
-    queryset = CustomUser.objects.all()
+    queryset = User.objects.all()
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
@@ -102,7 +110,7 @@ class SendEmail(APIView):
                 {'error': EMAIL_CANNOT_BE_EMPTY},
                 status=HTTP_400_BAD_REQUEST
             )
-        user = CustomUser.objects.filter(email=email)
+        user = User.objects.filter(email=email)
         if not user.exists():
             return Response(
                 {'error': EMAIL_NOT_FOUND_ERROR},

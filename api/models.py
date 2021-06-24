@@ -1,17 +1,19 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import (CASCADE,
-                              SET_NULL,
-                              CharField,
-                              DateTimeField,
-                              EmailField,
-                              ForeignKey,
-                              ManyToManyField,
-                              Model,
-                              PositiveSmallIntegerField,
-                              SlugField,
-                              TextField,
-                              UniqueConstraint)
+from django.db.models import (
+    CASCADE,
+    SET_NULL,
+    CharField,
+    DateTimeField,
+    EmailField,
+    ForeignKey,
+    ManyToManyField,
+    Model,
+    PositiveSmallIntegerField,
+    SlugField,
+    TextField,
+    UniqueConstraint
+)
 
 from .roles import ADMIN, MODERATOR, USER
 from .validators import custom_year_validator
@@ -23,15 +25,7 @@ ROLES = (
 )
 
 
-def get_max_role_length(roles):
-    max_length = 0
-    for role, _ in roles:
-        if len(role) > max_length:
-            max_length = len(role)
-    return max_length
-
-
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     email = EmailField(
         verbose_name='E-Mail',
         unique=True,
@@ -45,7 +39,7 @@ class CustomUser(AbstractUser):
         verbose_name='Уровень пользователя',
         choices=ROLES,
         default=USER,
-        max_length=get_max_role_length(ROLES)
+        max_length=max(len(role) for role, _ in ROLES)
     )
     confirmation_code = CharField(
         verbose_name='Код подтверждения',
@@ -149,7 +143,7 @@ class Title(Model):
 
 class Review(Model):
     author = ForeignKey(
-        CustomUser,
+        User,
         on_delete=CASCADE,
         related_name='reviews',
         verbose_name='Автор',
@@ -197,7 +191,7 @@ class Review(Model):
 
 class Comment(Model):
     author = ForeignKey(
-        CustomUser,
+        User,
         on_delete=CASCADE,
         related_name='comments',
         verbose_name='Автор',
