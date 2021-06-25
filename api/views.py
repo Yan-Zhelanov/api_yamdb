@@ -21,7 +21,6 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework_simplejwt.views import TokenViewBase
 from rest_framework_simplejwt.tokens import AccessToken
 
 from api_yamdb.settings import SUPPORT_MAIL
@@ -118,7 +117,7 @@ class SendEmail(APIView):
                 username=username,
                 confirmation_code=confirmation_code,
             )
-        else:        
+        else:
             user.update(confirmation_code=confirmation_code)
         return Response(serializer.validated_data)
 
