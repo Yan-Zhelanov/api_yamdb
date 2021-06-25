@@ -19,12 +19,12 @@ from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly
 )
 from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.views import TokenViewBase
 from rest_framework_simplejwt.tokens import AccessToken
 
-from api_yamdb.constants import SUPPORT_MAIL, MAIN_URL
+from api_yamdb.settings import SUPPORT_MAIL
 
 from .filters import TitleFilter
 from .models import Category, User, Genre, Title
@@ -48,7 +48,6 @@ from .serializers import (
 GET_TOKEN_INVALID_REQUEST = (
     'O-ops! The user with such data was not found, check the entered data!'
 )
-CONFIRMATION_CODE_CANNOT_BE_EMPTY = 'O-ops! Confirmation code cannot be empty!'
 EMAIL_SUBJECT = 'YamDB - Confirmation Code'
 EMAIL_TEXT = ('You secret code for getting the token: {confirmation_code}\n'
               'Don\'t sent it on to anyone!')
@@ -82,26 +81,23 @@ class UserViewSet(ModelViewSet):
     def me(self, request):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
-        else:
-            if request.data.get('role'):
-                setattr(request.data, '_mutable', True)
-                request.data.pop('role')
-            serializer = self.get_serializer(
-                request.user, data=request.data, partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
+            return Response(serializer.data)
+        serializer = self.get_serializer(
+            request.user, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(role=request.user.role)
         return Response(serializer.data)
 
 
-class SendEmail(CreateAPIView):
-    serializer_class = SendEmailSerializer
+class SendEmail(APIView):
     permission_classes = (AllowAny,)
-    queryset = User.objects.all()
 
-    def perform_create(self, serializer):
-        email = serializer.validated_data.get('email').lower()
-        username = str(email).split('@')[0]
+    def post(self, request):
+        serializer = SendEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = request.data.get('email').lower()
+        username = email.split('@')[0]
         alphabet = string.ascii_letters + string.digits
         confirmation_code = get_random_string(
             CONFIRMATION_CODE_LENGTH, alphabet
@@ -109,24 +105,30 @@ class SendEmail(CreateAPIView):
         send_mail(
             EMAIL_SUBJECT,
             EMAIL_TEXT.format(confirmation_code=confirmation_code),
-            (SUPPORT_MAIL + MAIN_URL),
+            SUPPORT_MAIL,
             (email,)
         )
+        usernames = [user.username for user in User.objects.all()]
+        while username in usernames:
+            username += '2'
         user = User.objects.filter(email=email)
         if not user.exists():
-            return serializer.save(
+            User.objects.create(
                 email=email,
                 username=username,
                 confirmation_code=confirmation_code,
             )
-        return user.update(confirmation_code=confirmation_code)
+        else:        
+            user.update(confirmation_code=confirmation_code)
+        return Response(serializer.validated_data)
 
 
-class GetToken(TokenViewBase):
+class GetToken(APIView):
     permission_classes = (AllowAny,)
-    serializer_class = GetTokenSerializer
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
+        serializer = GetTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         email = request.data.get('email').lower()
         confirmation_code = request.data.get('confirmation_code')
         user = User.objects.filter(

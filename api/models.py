@@ -15,9 +15,11 @@ from django.db.models import (
     UniqueConstraint
 )
 
-from .roles import ADMIN, MODERATOR, USER
 from .validators import custom_year_validator
 
+USER = 'user'
+MODERATOR = 'moderator'
+ADMIN = 'admin'
 ROLES = (
     (USER, USER),
     (MODERATOR, MODERATOR),

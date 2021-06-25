@@ -37,9 +37,13 @@ from data.import_data import create_models
 ```
 
 4. Запускаем скрипт с тремя параметрами:
+
 ```file_path``` — путь до вашего csv файла,
-```model``` — выберите модель из импоритрованных ранее,
-```print_errors``` — нужно ли распечатать каждую ошибку подробно?
+
+```model``` — класс модели из импортированных ранее,
+
+```print_errors``` — нужно ли распечатать каждую ошибку подробно? (```True or False```)
+
 Пример:
 ```python
 create_models('data/review.csv', Review, False)

@@ -1,6 +1,6 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-from .roles import ADMIN, MODERATOR
+from .models import MODERATOR, ADMIN
 
 
 class IsOwner(BasePermission):
@@ -12,9 +12,11 @@ class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
-            and request.user.role == ADMIN
-            or request.user.is_staff
-            or request.user.is_superuser
+            and (
+                request.user.role == ADMIN
+                or request.user.is_staff
+                or request.user.is_superuser
+            )
         )
 
 

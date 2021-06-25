@@ -11,12 +11,7 @@ from rest_framework.validators import ValidationError
 
 from .models import Category, Comment, User, Genre, Review, Title
 
-EMAIL_SUCCESSFULLY_SENT = 'Email sent! Please, check your inbox or spam.'
-EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
-CONFIRMATION_CODE_INVALID = 'O-ops! Invalid confirmation code!'
 REVIEW_EXISTS = 'O-ops! Review already exists!'
-EMAIL_IS_EXISTS = 'O-ops! User with this e-mail already exists!'
-SCORE_NOT_VALID = 'O-ops! Score not in range from 1 to 10!'
 SCORE_RANGE = range(1, 11)
 
 
@@ -28,11 +23,8 @@ class SendEmailSerializer(Serializer):
 
 
 class GetTokenSerializer(Serializer):
+    email = EmailField(required=True)
     confirmation_code = CharField(required=True)
-
-    class Meta:
-        model = User
-        fields = ('email', 'confirmation_code')
 
 
 class UserSerializer(ModelSerializer):
@@ -54,7 +46,6 @@ class ReviewSerializer(ModelSerializer):
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
-        read_only_fields = ('pub_date',)
 
     def validate(self, attrs):
         if self.context['request'].method != 'POST':
