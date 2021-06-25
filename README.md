@@ -1,47 +1,46 @@
 # API YaMDb
-The YaMDb project collects user reviews of works of art.
-Works have different categories: "Books", "Movies", "Music".
+Проект YaMDb собирает отзывы пользователей на произведения. Произведения делятся на категории: «Книги», «Фильмы», «Музыка».
 
-## How to import data
-1. Use shell to import:
+## Как импортировать дату в базу данных?
+1. Используйте shell:
 ```bash
 python manage.py shell
 ```
 
-2. Import script:
+2. Импортируйте скрипт:
 ```python
 from data.import_data import import_data
 ```
-3. Run script:
+3. Запустите скрипт:
 ```python
-# If you need print errors:
+# Если вам нужен отчёт о каждой ошибке:
 import_data(True)
 
-# or:
+# Если не нужен:
 import_data()
 ```
 
-## How to import custom data
-1. Use shell to import:
+## Как импортировать дату из своего csv файла?
+1. Заходим в shell:
 ```bash
 python manage.py shell
 ```
 
-2. Import all models what you need:
+2. Импортируем нужные модели:
 ```python
-from api.models import CustomUser, Category, Comment, Genre, Review, Title
+from api.models import User, Category, Comment, Genre, Review, Title
 ```
 
-3. Import script:
+3. Импортируем скрипт:
 ```python
 from data.import_data import create_models
 ```
 
-4. Run script with three parameters:
-```file_path```,
-```model``` — Class model,
-```print_errors``` — do need to print errors
-Example:
+4. Запускаем скрипт с тремя параметрами:
+```file_path``` — путь до вашего csv файла,
+```model``` — выберите модель из импоритрованных ранее,
+```print_errors``` — нужно ли распечатать каждую ошибку подробно?
+Пример:
 ```python
-create_models('data/category.csv', Category, False)
+create_models('data/review.csv', Review, False)
 ```

@@ -1,6 +1,5 @@
 from rest_framework.serializers import (
     CharField,
-    ChoiceField,
     CurrentUserDefault,
     EmailField,
     FloatField,
@@ -9,9 +8,8 @@ from rest_framework.serializers import (
     SlugRelatedField
 )
 from rest_framework.validators import ValidationError
-from rest_framework_simplejwt.tokens import AccessToken
 
-from .models import ROLES, Category, Comment, User, Genre, Review, Title
+from .models import Category, Comment, User, Genre, Review, Title
 
 EMAIL_SUCCESSFULLY_SENT = 'Email sent! Please, check your inbox or spam.'
 EMAIL_NOT_FOUND_ERROR = 'O-ops! E-mail not found!'
@@ -22,38 +20,28 @@ SCORE_NOT_VALID = 'O-ops! Score not in range from 1 to 10!'
 SCORE_RANGE = range(1, 11)
 
 
-class GetTokenSerializer(Serializer):
+class SendEmailSerializer(Serializer):
     email = EmailField(required=True)
+
+    def create(self, validated_data):
+        return User.objects.create(**validated_data)
+
+
+class GetTokenSerializer(Serializer):
     confirmation_code = CharField(required=True)
 
     class Meta:
         model = User
         fields = ('email', 'confirmation_code')
 
-    def validate(self, attrs):
-        user = User.objects.filter(email=attrs.get('email'))
-        if not user.exists():
-            raise ValidationError({'error': EMAIL_NOT_FOUND_ERROR})
-        if user.first().confirmation_code != attrs.get('confirmation_code'):
-            raise ValidationError({'error': CONFIRMATION_CODE_INVALID})
-        return {'token': str(AccessToken.for_user(user.first()))}
-
 
 class UserSerializer(ModelSerializer):
-    role = ChoiceField(choices=ROLES, required=False)
-    email = EmailField(required=True)
-
     class Meta:
         model = User
         fields = (
             'first_name', 'last_name', 'username', 'bio', 'email',
             'role'
         )
-
-    # def validate_email(self, email):
-    #     if User.objects.filter(email=email).exists():
-    #         raise ValidationError(EMAIL_IS_EXISTS.format(email=email))
-    #     return email
 
 
 class ReviewSerializer(ModelSerializer):
@@ -64,9 +52,8 @@ class ReviewSerializer(ModelSerializer):
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
-        write_only_fields = ('title',)
         read_only_fields = ('pub_date',)
 
     def validate(self, attrs):
@@ -88,9 +75,8 @@ class CommentSerializer(ModelSerializer):
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'text', 'author', 'pub_date')
         model = Comment
-        write_only_fields = ('review',)
         read_only_fields = ('pub_date',)
 
 

@@ -3,18 +3,18 @@ import csv
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import IntegrityError
 
-from api.models import Category, Comment, CustomUser, Genre, Review, Title
+from api.models import Category, Comment, User, Genre, Review, Title
 
 
 def print_error(error, row, print_error):
     if print_error:
-        print('Error:', error.args, '\nRow:', row)
+        print('Error:', error.args, '\nRow ID:', row.get('id'))
 
 
 def create_correct_row_fields(row, print_errors):
     try:
         if row.get('author'):
-            row['author'] = CustomUser.objects.get(pk=row['author'])
+            row['author'] = User.objects.get(pk=row['author'])
         if row.get('review_id'):
             row['review'] = Review.objects.get(pk=row['review_id'])
         if row.get('title_id'):
@@ -44,13 +44,16 @@ def create_models(file_path, model, print_errors):
             except ValueError as error:
                 print_error(error, row, print_errors)
         errors = total_count - successfull
-        print('Successfull: {}; errors: {}'.format(successfull, errors))
+        print('Model: {}\nSuccessfull: {}; errors: {}'.format(
+            model.__name__, successfull, errors
+        ))
 
 
 def import_data(print_errors=False):
+    print('All errors')
     create_models('data/category.csv', Category, print_errors)
     create_models('data/titles.csv', Title, print_errors)
     create_models('data/genre.csv', Genre, print_errors)
-    create_models('data/users.csv', CustomUser, print_errors)
+    create_models('data/users.csv', User, print_errors)
     create_models('data/review.csv', Review, print_errors)
     create_models('data/comments.csv', Comment, print_errors)
