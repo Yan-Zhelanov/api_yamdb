@@ -12,14 +12,10 @@ from rest_framework.validators import ValidationError
 from .models import Category, Comment, User, Genre, Review, Title
 
 REVIEW_EXISTS = 'O-ops! Review already exists!'
-SCORE_RANGE = range(1, 11)
 
 
 class SendEmailSerializer(Serializer):
     email = EmailField(required=True)
-
-    def create(self, validated_data):
-        return User.objects.create(**validated_data)
 
 
 class GetTokenSerializer(Serializer):
