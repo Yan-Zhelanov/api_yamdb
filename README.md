@@ -81,6 +81,23 @@ from data.import_data import create_models
 create_models('data/review.csv', Review, False)
 ```
 
+## Вход
+Создайте супер пользователя, обязательно укажите почту и пароль:
+```bash
+python manage.py createsuperuser
+```
+Отправьте POST-запрос на ссылку: ```http://127.0.0.1:8000/api/v1/auth/email/``` — не забудьте указать в параметрах вашу почту!
+Пример:
+```bash
+curl -X POST -F "email=ваша_почта@gmail.com" http://127.0.0.1:8000/api/v1/auth/email/
+```
+В папке ```./sent_emails/``` появится новое "письмо", откройте его и скопируйте код для авторизации.
+
+Теперь отправьте POST-запрос, только с кодом на ```http://127.0.0.1:8000/api/v1/auth/token/```, чтобы получить токен. Пример:
+```bash
+curl -X POST -F "email=ваша_почта@gmail.com" -F "confirmation_code=ваш_код" http://127.0.0.1:8000/api/v1/auth/token/
+```
+
 ## Документация
 Чтобы открыть документацию, запустите сервер и перейдите по ссылке:
 ```http://127.0.0.1:8000/redoc/```
